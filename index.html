@@ -58,8 +58,8 @@
     <!-- Firebase Modular Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Configuration provided by user / environment
         const envConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
@@ -936,7 +936,9 @@
             const now = new Date();
             const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            const matchId = `match_${Date.now()}`;
             const newMatch = {
+                id: matchId,
                 date: dateStr,
                 timestamp: Date.now(),
                 map: map,
@@ -944,21 +946,28 @@
                 players: activeMatchPlayers
             };
 
-            // Salvar no Firestore
+            // 1. Atualiza o estado local imediatamente e força a renderização das tabelas
+            window.appData.matches.push(newMatch);
+            window.renderAll();
+
+            // 2. Salvar no Firestore para sincronização com outros dispositivos
             if (window.FB_DB) {
                 try {
-                    const matchId = `match_${Date.now()}`;
-                    await setDoc(window.getPublicDocRef('matches', matchId), newMatch);
+                    await setDoc(window.getPublicDocRef('matches', matchId), {
+                        date: dateStr,
+                        timestamp: newMatch.timestamp,
+                        map: map,
+                        photo: currentPhotoBase64,
+                        players: activeMatchPlayers
+                    });
                 } catch(err) {
                     console.error("Erro ao salvar partida no Firebase:", err);
+                    showToast("Erro ao sincronizar com Firebase. Gravado localmente.", "warning");
                 }
-            } else {
-                window.appData.matches.push(newMatch);
-                window.renderAll();
             }
 
             closeMatchModal();
-            showToast("Partida e pontuações gravadas no Firebase com sucesso!", "success");
+            showToast("Partida registrada e pontuações atualizadas com sucesso!", "success");
         }
 
         // RESETAR MÊS E ACUMULAR ANUAL NO FIREBASE
@@ -991,14 +1000,17 @@
 
                 // Deletar ou limpar partidas no Firebase
                 if (window.FB_DB) {
-                    window.appData.matches.forEach(async (m) => {
+                    const matchesToDelete = [...window.appData.matches];
+                    for (const m of matchesToDelete) {
                         try {
                             if (m.id) {
                                 const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                                 await deleteDoc(window.getPublicDocRef('matches', m.id));
                             }
-                        } catch(e){}
-                    });
+                        } catch(e){
+                            console.error("Erro ao deletar partida no reset:", e);
+                        }
+                    }
                 }
                 window.appData.matches = [];
                 window.renderAll();
