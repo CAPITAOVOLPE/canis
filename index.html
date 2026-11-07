@@ -254,6 +254,7 @@
                         </optgroup>
                         <optgroup label="Jogadores">
                             <option value="Briza NORD">Briza NORD</option>
+                            <option value="Pereira NORD">Briza NORD</option>
                             <option value="Silva NORD">Silva NORD</option>
                             <option value="Cabo NORD">Cabo NORD</option>
                             <option value="Arno NORD">Arno NORD</option>
@@ -504,19 +505,33 @@
                 return;
             }
 
-            const userProfile = appState.users[username];
-
-            if (!userProfile) {
-                errorDiv.textContent = "Usuário não encontrado!";
+            // Check if user belongs to fixed NORD roster
+            if (!ALL_MEMBERS.includes(username)) {
+                errorDiv.textContent = "Usuário não pertence à equipe NORD";
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
-            // Password registration on first login vs validation
+            // Ensure profile exists in appState
+            if (!appState.users) appState.users = {};
+            if (!appState.users[username]) {
+                appState.users[username] = {
+                    password: null,
+                    role: ALL_ADMS.includes(username) ? "admin" : "player",
+                    monthlyPoints: 0,
+                    annualPoints: 0,
+                    killsTotal: 0,
+                    matchesTotal: 0
+                };
+            }
+
+            const userProfile = appState.users[username];
+
+            // Password registration on first login vs validation on subsequent logins
             if (!userProfile.password) {
                 userProfile.password = password;
                 saveStateToFirestore();
-                showToast(`Senha salva com sucesso para ${username}!`, "success");
+                showToast(`Primeiro acesso realizado! Senha cadastrada com sucesso para ${username}.`, "success");
             } else if (userProfile.password !== password) {
                 errorDiv.textContent = "Senha incorreta!";
                 errorDiv.classList.remove('hidden');
