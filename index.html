@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 NORD Team - Sistema de Ranks</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        nord: {
+                            base: '#0B0F19',
+                            card: '#151C2C',
+                            border: '#2A354D',
+                            accent: '#F59E0B', // Amarelo CS
+                            blue: '#3B82F6',
+                            red: '#EF4444',
+                            green: '#10B981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0F19;
+            color: #E2E8F0;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A354D;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3B82F6;
+        }
+    </style>
+
+    <!-- Firebase Modular Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration provided by user / environment
+        const envConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const userProvidedConfig = {
+            apiKey: "AIzaSyAerJxRg8JF2W2DLLCLrI7d9pIFNprMQl0",
+            authDomain: "chatcat-73364.firebaseapp.com",
+            databaseURL: "https://chatcat-73364-default-rtdb.firebaseio.com",
+            projectId: "chatcat-73364",
+            storageBucket: "chatcat-73364.firebasestorage.app",
+            messagingSenderId: "645503800079",
+            appId: "1:645503800079:web:850860c42bec8a73e0e47a",
+            measurementId: "G-1K6TJ1G44X"
+        };
+
+        const firebaseConfig = envConfig || userProvidedConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cs2-nord-rank-default';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Exporting to global scope for application logic
+        window.FB_APP = app;
+        window.FB_AUTH = auth;
+        window.FB_DB = db;
+        window.FB_APP_ID = appId;
+
+        // Functions for Firestore operations under Strict Rules
+        window.getPublicDocRef = (collName, docId) => doc(db, 'artifacts', appId, 'public', 'data', collName, docId);
+        window.getPublicCollRef = (collName) => collection(db, 'artifacts', appId, 'public', 'data', collName);
+
+        // Authenticate then listen to data
+        async function initAuthAndFirestore() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Auth error, attempting fallback:", err);
+                try { await signInAnonymously(auth); } catch(e){}
+            }
+
+            // Realtime Sync for Users (Passwords)
+            onSnapshot(window.getPublicCollRef('users'), (snapshot) => {
+                snapshot.forEach(docSnap => {
+                    window.appData.users[docSnap.id] = docSnap.data();
+                });
+                window.renderAll();
+            }, (err) => console.error("Firestore users snapshot error:", err));
+
+            // Realtime Sync for Matches
+            onSnapshot(window.getPublicCollRef('matches'), (snapshot) => {
+                let loadedMatches = [];
+                snapshot.forEach(docSnap => {
+                    loadedMatches.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                // Sort by creation date
+                loadedMatches.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                window.appData.matches = loadedMatches;
+                window.renderAll();
+            }, (err) => console.error("Firestore matches snapshot error:", err));
+
+            // Realtime Sync for Annual Points
+            onSnapshot(window.getPublicCollRef('annual'), (snapshot) => {
+                snapshot.forEach(docSnap => {
+                    window.appData.annualPoints[docSnap.id] = docSnap.data().points || 0;
+                });
+                window.renderAll();
+            }, (err) => console.error("Firestore annual snapshot error:", err));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initAuthAndFirestore();
+        });
+    </script>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-nord-accent selection:text-black">
+
+    <!-- NAV BAR -->
+    <header class="bg-nord-card/80 backdrop-blur border-b border-nord-border sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid font-black text-xl text-black">N</i>
+                    </div>
+                    <div>
+                        <span class="font-orbitron font-bold text-xl tracking-wider text-white">NORD <span class="text-nord-accent">CS2</span></span>
+                        <span class="hidden sm:inline-block text-xs bg-nord-border text-gray-300 px-2 py-0.5 rounded ml-2 font-mono" id="current-month-badge">Temporada Ativa</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div id="user-info-bar" class="hidden flex items-center gap-3 bg-nord-base px-3 py-1.5 rounded-lg border border-nord-border">
+                        <div class="text-right">
+                            <div id="logged-user-name" class="font-semibold text-sm text-white leading-none"></div>
+                            <div id="logged-user-role" class="text-[10px] font-mono text-nord-accent leading-tight"></div>
+                        </div>
+                        <button onclick="logout()" class="text-gray-400 hover:text-red-400 transition-colors p-1" title="Sair">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                    <button id="btn-open-login" onclick="showLoginModal()" class="bg-nord-accent hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-amber-500/10 flex items-center gap-2">
+                        <i class="fa-solid fa-user"></i> Entrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- TOP ACTIONS & STATS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Card Status -->
+            <div class="bg-nord-card rounded-xl p-5 border border-nord-border relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 text-nord-border/30 text-7xl font-bold">
+                    <i class="fa-solid fa-calendar-alt"></i>
+                </div>
+                <h3 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1">Status da Temporada</h3>
+                <div class="text-2xl font-orbitron font-bold text-white mb-2">Rank Mensal & Anual</div>
+                <p class="text-xs text-gray-400">O rank mensal é resetado no fim do mês. Cada 10 pts viram 1 pt no Rank Anual!</p>
+            </div>
+
+            <!-- Card Regras de Pontuação -->
+            <div class="bg-nord-card rounded-xl p-5 border border-nord-border relative overflow-hidden">
+                <h3 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2"><i class="fa-solid fa-circle-info text-nord-accent mr-1"></i> Regras de Pontuação</h3>
+                <ul class="text-xs space-y-1 text-gray-300">
+                    <li>• <strong>Mínimo:</strong> 2 Jogadores NORD na partida</li>
+                    <li>• <strong>Vitória:</strong> +1 ponto por vitória registrada</li>
+                    <li>• <strong>Kills:</strong> +1pt a cada 15 kills (ex: 20=1pt, 30=2pts)</li>
+                    <li>• <strong>Honra:</strong> +1 ponto por honra concedida</li>
+                </ul>
+            </div>
+
+            <!-- Card Ação de ADM -->
+            <div class="bg-nord-card rounded-xl p-5 border border-nord-border flex flex-col justify-between">
+                <div>
+                    <h3 class="text-nord-accent text-xs font-semibold uppercase tracking-wider mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Painel de Administração</h3>
+                    <p class="text-xs text-gray-400">Admins registrados podem registrar partidas e fechar a temporada mensal.</p>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <button id="btn-add-match" onclick="openMatchModal()" disabled class="flex-1 bg-nord-blue hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Registrar Partida
+                    </button>
+                    <button id="btn-reset-month" onclick="confirmResetMonth()" disabled class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5" title="Resetar Mês e Acumular Anual">
+                        <i class="fa-solid fa-rotate-left"></i> Fechar Mês
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS NAV -->
+        <div class="flex border-b border-nord-border mb-6">
+            <button onclick="switchTab('mensal')" id="tab-mensal" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-nord-accent text-nord-accent flex items-center gap-2 transition">
+                <i class="fa-solid fa-trophy"></i> Rank Mensal
+            </button>
+            <button onclick="switchTab('anual')" id="tab-anual" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+                <i class="fa-solid fa-crown text-yellow-500"></i> Rank Anual (TOP 5)
+            </button>
+            <button onclick="switchTab('historico')" id="tab-historico" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+                <i class="fa-solid fa-history"></i> Histórico de Partidas
+            </button>
+        </div>
+
+        <!-- RANK MENSAL TAB -->
+        <div id="content-mensal" class="tab-content">
+            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
+                <div class="p-4 bg-nord-base/50 border-b border-nord-border flex justify-between items-center">
+                    <h2 class="font-orbitron text-lg font-bold text-white flex items-center gap-2">
+                        <span>Classificação do Mês</span>
+                    </h2>
+                    <span class="text-xs text-gray-400"><i class="fa-solid fa-bolt text-amber-400"></i> Atualizado em tempo real</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-nord-border bg-nord-base/30 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                <th class="py-3 px-4 text-center">#</th>
+                                <th class="py-3 px-4">Jogador</th>
+                                <th class="py-3 px-4 text-center">Tipo</th>
+                                <th class="py-3 px-4 text-center">Vitórias</th>
+                                <th class="py-3 px-4 text-center">Total Kills</th>
+                                <th class="py-3 px-4 text-center">Honras</th>
+                                <th class="py-3 px-4 text-center">Estimativa Anual</th>
+                                <th class="py-3 px-4 text-right">Pontuação Mensal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-mensal-body" class="divide-y divide-nord-border text-sm">
+                            <!-- Preenchido via Javascript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- RANK ANUAL TAB -->
+        <div id="content-anual" class="tab-content hidden">
+            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
+                <div class="p-4 bg-nord-base/50 border-b border-nord-border flex justify-between items-center">
+                    <div>
+                        <h2 class="font-orbitron text-lg font-bold text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-star"></i> Hall da Fama Anual - TOP 5
+                        </h2>
+                        <p class="text-xs text-gray-400">Cada 10 pontos do rank mensal equivalem a 1 ponto acumulado no Rank Anual.</p>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <!-- PODIUM TOP 3 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 items-end" id="podium-container">
+                        <!-- Podio montado dinamicamente -->
+                    </div>
+
+                    <!-- TABELA COMPLETA TOP 5 -->
+                    <div class="overflow-x-auto rounded-lg border border-nord-border">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-nord-border bg-nord-base/40 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                    <th class="py-3 px-4 text-center">Posição</th>
+                                    <th class="py-3 px-4">Jogador</th>
+                                    <th class="py-3 px-4 text-center">Múltiplos Mensais Convertidos</th>
+                                    <th class="py-3 px-4 text-right">Pontos Anuais</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-anual-body" class="divide-y divide-nord-border text-sm">
+                                <!-- Preenchido via Javascript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTÓRICO DE PARTIDAS TAB -->
+        <div id="content-historico" class="tab-content hidden">
+            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
+                <div class="p-4 bg-nord-base/50 border-b border-nord-border">
+                    <h2 class="font-orbitron text-lg font-bold text-white">Partidas Registradas no Mês</h2>
+                </div>
+                <div class="p-4 space-y-4" id="match-history-list">
+                    <!-- Cards de partidas preenchidos via JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-nord-card border-t border-nord-border py-4 text-center text-xs text-gray-500">
+        <p>CS2 NORD Team Rank System &copy; 2026 - Orgulhosamente desenvolvido para a NORD.</p>
+    </footer>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="modal-login" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-nord-card border border-nord-border rounded-xl w-full max-w-md p-6 shadow-2xl relative">
+            <button onclick="hideLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-nord-accent/20 border border-nord-accent/40 rounded-full flex items-center justify-center mx-auto mb-2 text-nord-accent">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <h3 class="font-orbitron text-xl font-bold text-white">Autenticação NORD</h3>
+                <p class="text-xs text-gray-400 mt-1">Selecione seu nick para entrar. No primeiro acesso, a senha digitada será cadastrada.</p>
+            </div>
+
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Selecione o Jogador / ADM</label>
+                    <select id="login-user-select" required class="w-full bg-nord-base border border-nord-border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-nord-accent text-sm">
+                        <option value="" disabled selected>Escolha seu usuário...</option>
+                        <optgroup label="Administradores">
+                            <option value="capitao NORD">capitao NORD</option>
+                            <option value="Mateus NORD">Mateus NORD</option>
+                            <option value="Zyrax NORD">Zyrax NORD</option>
+                        </optgroup>
+                        <optgroup label="Jogadores">
+                            <option value="Briza NORD">Briza NORD</option>
+                            <option value="Silva NORD">Silva NORD</option>
+                            <option value="Cabo NORD">Cabo NORD</option>
+                            <option value="Arno NORD">Arno NORD</option>
+                            <option value="Tenente NORD">Tenente NORD</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Senha</label>
+                    <input type="password" id="login-password" required placeholder="Digite sua senha..." class="w-full bg-nord-base border border-nord-border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-nord-accent text-sm">
+                    <p class="text-[11px] text-nord-accent/80 mt-1" id="login-password-hint">Novo usuário? A senha informada agora se tornará sua senha oficial.</p>
+                </div>
+
+                <button type="submit" class="w-full bg-nord-accent hover:bg-amber-400 text-black font-bold py-2.5 rounded-lg transition text-sm font-orbitron mt-2">
+                    Entrar no Sistema
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR PARTIDA (ADM) -->
+    <div id="modal-match" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-nord-card border border-nord-border rounded-xl w-full max-w-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <button onclick="closeMatchModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="mb-4">
+                <h3 class="font-orbitron text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-nord-accent"></i> Registrar Partida da NORD
+                </h3>
+                <p class="text-xs text-gray-400">Escolha a quantidade de membros e preencha as abas de cada jogador com as informações e foto da partida.</p>
+            </div>
+
+            <form id="form-match" onsubmit="handleSaveMatch(event)" class="flex-grow overflow-y-auto space-y-4 pr-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-nord-base/50 p-3 rounded-lg border border-nord-border">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Quantos Membros em Partida?</label>
+                        <select id="match-player-count" onchange="renderMatchPlayerTabs()" class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                            <option value="2">2 Jogadores</option>
+                            <option value="3">3 Jogadores</option>
+                            <option value="4">4 Jogadores</option>
+                            <option value="5" selected>5 Jogadores</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Mapa / Info (Opcional)</label>
+                        <input type="text" id="match-map" placeholder="Ex: Mirage, Inferno, Dust II..." class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                    </div>
+                </div>
+
+                <!-- Foto de Registro / Print da Partida -->
+                <div class="bg-nord-base/50 p-3 rounded-lg border border-nord-border space-y-2">
+                    <label class="block text-xs font-semibold text-gray-300 uppercase">
+                        <i class="fa-solid fa-image text-nord-accent mr-1"></i> Foto de Registro da Partida (URL ou Upload)
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="url" id="match-photo-url" oninput="previewPhotoInput()" placeholder="Cole a URL da imagem/screenshot..." class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-nord-accent">
+                        <input type="file" id="match-photo-file" accept="image/*" onchange="handlePhotoUpload(event)" class="w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-nord-border file:text-white hover:file:bg-nord-accent hover:file:text-black">
+                    </div>
+                    <div id="photo-preview-container" class="hidden mt-2">
+                        <img id="photo-preview" src="" alt="Preview da Imagem" class="max-h-36 rounded border border-nord-border object-cover">
+                    </div>
+                </div>
+
+                <!-- ABAS E FORMULÁRIO DINÂMICO DOS JOGADORES -->
+                <div>
+                    <div id="match-tabs-header" class="flex flex-wrap gap-2 border-b border-nord-border pb-2 mb-3">
+                        <!-- Botões de abas gerados por JS -->
+                    </div>
+                    <div id="match-tabs-body">
+                        <!-- Conteúdo da aba selecionada gerado por JS -->
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-nord-border flex justify-end gap-3">
+                    <button type="button" onclick="closeMatchModal()" class="px-4 py-2 bg-nord-border text-gray-300 hover:text-white rounded-lg text-sm">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-nord-blue hover:bg-blue-600 text-white font-semibold rounded-lg text-sm transition font-orbitron">Salvar Partida</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTIFICAÇÕES TOAST -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // LISTA FIXA DE INTEGRANTES E ROLES
+        const PLAYERS_LIST = [
+            // ADMs
+            { name: "capitao NORD", isAdmin: true },
+            { name: "Mateus NORD", isAdmin: true },
+            { name: "Zyrax NORD", isAdmin: true },
+            // Jogadores
+            { name: "Briza NORD", isAdmin: false },
+            { name: "Silva NORD", isAdmin: false },
+            { name: "Cabo NORD", isAdmin: false },
+            { name: "Arno NORD", isAdmin: false },
+            { name: "Tenente NORD", isAdmin: false },
+        ];
+
+        // ESTRUTURA DE DADOS EM MEMÓRIA
+        window.appData = {
+            users: {}, // { "Briza NORD": { password: "123" } }
+            matches: [], // Array de partidas
+            annualPoints: {} // { "Briza NORD": 12 }
+        };
+
+        let currentUser = null; // Usuário logado atualmente
+        let activeMatchTab = 0;
+        let activeMatchPlayers = [];
+        let currentPhotoBase64 = "";
+
+        // GERENCIAMENTO DE MENSAGENS / TOASTS
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-nord-border text-white';
+            if(type === 'success') bg = 'bg-emerald-600 text-white';
+            if(type === 'error') bg = 'bg-rose-600 text-white';
+            if(type === 'warning') bg = 'bg-amber-500 text-black font-semibold';
+
+            toast.className = `${bg} px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2 transition-all duration-300`;
+            toast.innerHTML = `<span>${msg}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3500);
+        }
+
+        // CONTROLADORES DE TABS
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('border-nord-accent', 'text-nord-accent');
+                el.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const activeTabBtn = document.getElementById(`tab-${tabName}`);
+            activeTabBtn.classList.remove('border-transparent', 'text-gray-400');
+            activeTabBtn.classList.add('border-nord-accent', 'text-nord-accent');
+        }
+
+        // MODAL DE LOGIN
+        function showLoginModal() {
+            document.getElementById('modal-login').classList.remove('hidden');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('modal-login').classList.add('hidden');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-user-select').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                showToast("Preencha todos os campos!", "error");
+                return;
+            }
+
+            // Verifica se usuário tem senha cadastrada no Firebase / Local
+            if (!window.appData.users[username]) {
+                // Primeiro acesso: Cadastra a senha no Firestore
+                window.appData.users[username] = { password: password };
+                if (window.FB_DB) {
+                    try {
+                        await setDoc(window.getPublicDocRef('users', username), { password: password });
+                    } catch(err) {
+                        console.error("Erro ao salvar senha no Firebase:", err);
+                    }
+                }
+                showToast(`Senha registrada com sucesso para ${username}!`, "success");
+            } else {
+                // Acessos posteriores: Valida a senha
+                if (window.appData.users[username].password !== password) {
+                    showToast("Senha incorreta!", "error");
+                    return;
+                }
+            }
+
+            // Login efetuado com sucesso
+            const playerConfig = PLAYERS_LIST.find(p => p.name === username);
+            currentUser = {
+                name: username,
+                isAdmin: playerConfig ? playerConfig.isAdmin : false
+            };
+
+            updateUserInterface();
+            hideLoginModal();
+            document.getElementById('login-password').value = '';
+            showToast(`Bem-vindo, ${currentUser.name}!`, "success");
+        }
+
+        function logout() {
+            currentUser = null;
+            updateUserInterface();
+            showToast("Sessão encerrada com sucesso.");
+        }
+
+        function updateUserInterface() {
+            const btnOpenLogin = document.getElementById('btn-open-login');
+            const userInfoBar = document.getElementById('user-info-bar');
+            const btnAddMatch = document.getElementById('btn-add-match');
+            const btnResetMonth = document.getElementById('btn-reset-month');
+
+            if (currentUser) {
+                btnOpenLogin.classList.add('hidden');
+                userInfoBar.classList.remove('hidden');
+                
+                document.getElementById('logged-user-name').innerText = currentUser.name;
+                document.getElementById('logged-user-role').innerText = currentUser.isAdmin ? "ADMINISTRADOR" : "JOGADOR";
+
+                // Controles de ADM
+                if (currentUser.isAdmin) {
+                    btnAddMatch.disabled = false;
+                    btnResetMonth.disabled = false;
+                } else {
+                    btnAddMatch.disabled = true;
+                    btnResetMonth.disabled = true;
+                }
+            } else {
+                btnOpenLogin.classList.remove('hidden');
+                userInfoBar.classList.add('hidden');
+                btnAddMatch.disabled = true;
+                btnResetMonth.disabled = true;
+            }
+        }
+
+        // CÁLCULO DE PONTUAÇÃO MENSAL
+        function calculateMonthlyStats() {
+            const stats = {};
+            PLAYERS_LIST.forEach(p => {
+                stats[p.name] = {
+                    name: p.name,
+                    isAdmin: p.isAdmin,
+                    wins: 0,
+                    kills: 0,
+                    honors: 0,
+                    totalPoints: 0
+                };
+            });
+
+            // Processa todas as partidas salvas
+            (window.appData.matches || []).forEach(match => {
+                (match.players || []).forEach(p => {
+                    if (stats[p.name]) {
+                        const winsCount = parseInt(p.wins || 1);
+                        stats[p.name].wins += winsCount; // Soma quantidade de vitórias registradas
+                        stats[p.name].kills += parseInt(p.kills || 0);
+                        if (p.honor) stats[p.name].honors += 1;
+
+                        // Cálculo por participante:
+                        // Kills: +1 a cada 15 kills (Math.floor(kills / 15))
+                        // Vitórias: +1 ponto por vitória
+                        // Honra: +1 ponto
+                        let killsPoints = Math.floor((p.kills || 0) / 15);
+                        let honorPoint = p.honor ? 1 : 0;
+                        
+                        let playerMatchPoints = winsCount + killsPoints + honorPoint;
+                        stats[p.name].totalPoints += playerMatchPoints;
+                    }
+                });
+            });
+
+            return Object.values(stats).sort((a, b) => b.totalPoints - a.totalPoints || b.wins - a.wins || b.kills - a.kills);
+        }
+
+        // RENDERIZAÇÃO GERAL DA INTERFACE
+        window.renderAll = function() {
+            renderMonthlyRank();
+            renderAnnualRank();
+            renderMatchHistory();
+        }
+
+        // RENDER TABELA MENSAL
+        function renderMonthlyRank() {
+            const list = calculateMonthlyStats();
+            const tbody = document.getElementById('table-mensal-body');
+            tbody.innerHTML = '';
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-500">Nenhuma pontuação registrada neste mês.</td></tr>`;
+                return;
+            }
+
+            list.forEach((player, index) => {
+                const pos = index + 1;
+                let posBadge = `<span class="font-bold text-gray-400">${pos}º</span>`;
+                if (pos === 1) posBadge = `<span class="w-6 h-6 rounded-full bg-yellow-500 text-black font-extrabold flex items-center justify-center text-xs mx-auto shadow-md shadow-yellow-500/20">1</span>`;
+                if (pos === 2) posBadge = `<span class="w-6 h-6 rounded-full bg-slate-300 text-black font-extrabold flex items-center justify-center text-xs mx-auto">2</span>`;
+                if (pos === 3) posBadge = `<span class="w-6 h-6 rounded-full bg-amber-700 text-white font-extrabold flex items-center justify-center text-xs mx-auto">3</span>`;
+
+                const annualEstimate = Math.floor(player.totalPoints / 10);
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-nord-base/40 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center font-mono">${posBadge}</td>
+                    <td class="py-3 px-4 font-semibold text-white flex items-center gap-2">
+                        ${player.name}
+                        ${player.isAdmin ? '<span class="text-[10px] bg-nord-accent/20 text-nord-accent border border-nord-accent/30 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
+                    </td>
+                    <td class="py-3 px-4 text-center text-xs text-gray-400">${player.isAdmin ? 'Admin/Player' : 'Jogador'}</td>
+                    <td class="py-3 px-4 text-center font-mono text-emerald-400 font-bold">${player.wins}</td>
+                    <td class="py-3 px-4 text-center font-mono">${player.kills}</td>
+                    <td class="py-3 px-4 text-center font-mono text-amber-400">${player.honors}</td>
+                    <td class="py-3 px-4 text-center font-mono text-nord-blue font-semibold">+${annualEstimate} pts</td>
+                    <td class="py-3 px-4 text-right font-orbitron font-bold text-base text-nord-accent">${player.totalPoints} pts</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // RENDER TABELA ANUAL (TOP 5)
+        function renderAnnualRank() {
+            let annualList = PLAYERS_LIST.map(p => {
+                return {
+                    name: p.name,
+                    isAdmin: p.isAdmin,
+                    points: window.appData.annualPoints[p.name] || 0
+                }
+            }).sort((a, b) => b.points - a.points);
+
+            const top5 = annualList.slice(0, 5);
+
+            // Podio UI
+            const podiumContainer = document.getElementById('podium-container');
+            podiumContainer.innerHTML = '';
+
+            const p1 = top5[0] || { name: '-', points: 0 };
+            const p2 = top5[1] || { name: '-', points: 0 };
+            const p3 = top5[2] || { name: '-', points: 0 };
+
+            podiumContainer.innerHTML = `
+                <!-- 2º LUGAR -->
+                <div class="bg-nord-base/60 border border-nord-border rounded-xl p-4 text-center flex flex-col items-center justify-end order-2 md:order-1 h-44">
+                    <div class="w-10 h-10 rounded-full bg-slate-400 text-black font-bold flex items-center justify-center text-lg mb-2 shadow-lg">2</div>
+                    <div class="font-bold text-white text-sm truncate w-full">${p2.name}</div>
+                    <div class="font-orbitron text-xl font-extrabold text-slate-300 mt-1">${p2.points} <span class="text-xs font-normal">pts</span></div>
+                </div>
+                <!-- 1º LUGAR -->
+                <div class="bg-gradient-to-b from-amber-500/20 to-nord-base border border-amber-500/50 rounded-xl p-4 text-center flex flex-col items-center justify-end order-1 md:order-2 h-52 relative overflow-hidden shadow-xl">
+                    <i class="fa-solid fa-crown text-amber-400 text-2xl mb-1 animate-pulse"></i>
+                    <div class="w-12 h-12 rounded-full bg-amber-400 text-black font-extrabold flex items-center justify-center text-xl mb-2 shadow-lg shadow-amber-500/30">1</div>
+                    <div class="font-bold text-white text-base truncate w-full">${p1.name}</div>
+                    <div class="font-orbitron text-2xl font-black text-amber-400 mt-1">${p1.points} <span class="text-xs font-normal">pts</span></div>
+                </div>
+                <!-- 3º LUGAR -->
+                <div class="bg-nord-base/60 border border-nord-border rounded-xl p-4 text-center flex flex-col items-center justify-end order-3 md:order-3 h-40">
+                    <div class="w-9 h-9 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-base mb-2 shadow-lg">3</div>
+                    <div class="font-bold text-white text-sm truncate w-full">${p3.name}</div>
+                    <div class="font-orbitron text-lg font-extrabold text-amber-600 mt-1">${p3.points} <span class="text-xs font-normal">pts</span></div>
+                </div>
+            `;
+
+            // Tabela Top 5
+            const tbody = document.getElementById('table-anual-body');
+            tbody.innerHTML = '';
+
+            top5.forEach((player, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-nord-base/40 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center font-orbitron font-bold text-nord-accent">#${index + 1}</td>
+                    <td class="py-3 px-4 font-semibold text-white flex items-center gap-2">
+                        ${player.name}
+                        ${player.isAdmin ? '<span class="text-[10px] bg-nord-accent/20 text-nord-accent border border-nord-accent/30 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
+                    </td>
+                    <td class="py-3 px-4 text-center text-xs text-gray-400 font-mono">${player.points * 10} pts mensais acumulados</td>
+                    <td class="py-3 px-4 text-right font-orbitron font-bold text-lg text-amber-400">${player.points} pts</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // RENDER HISTÓRICO DE PARTIDAS
+        function renderMatchHistory() {
+            const container = document.getElementById('match-history-list');
+            container.innerHTML = '';
+
+            if (!window.appData.matches || window.appData.matches.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-gray-500">Nenhuma partida registrada neste mês.</div>`;
+                return;
+            }
+
+            const reversed = [...window.appData.matches].reverse();
+
+            reversed.forEach((m) => {
+                const card = document.createElement('div');
+                card.className = "bg-nord-base p-4 rounded-lg border border-nord-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-lg";
+                
+                let playersHtml = (m.players || []).map(p => {
+                    let winsCount = parseInt(p.wins || 1);
+                    let kills = parseInt(p.kills || 0);
+                    let pts = winsCount + Math.floor(kills / 15) + (p.honor ? 1 : 0);
+                    return `<div class="bg-nord-card border border-nord-border px-3 py-1.5 rounded text-xs flex flex-wrap items-center gap-2">
+                        <span class="font-bold text-white">${p.name}</span>
+                        <span class="text-gray-400">Vitórias: <strong class="text-emerald-400">${winsCount}</strong></span>
+                        <span class="text-gray-400">Kills: <strong class="text-white">${kills}</strong></span>
+                        ${p.honor ? '<span class="text-amber-400 font-semibold" title="Recebeu Honra"><i class="fa-solid fa-medal"></i> Honra</span>' : ''}
+                        <span class="text-nord-accent font-bold font-mono text-sm ml-auto">+${pts}pt</span>
+                    </div>`;
+                }).join('');
+
+                const photoSection = m.photo ? `
+                    <div class="mt-3 md:mt-0 flex-shrink-0">
+                        <a href="${m.photo}" target="_blank" title="Clique para ampliar a imagem">
+                            <img src="${m.photo}" alt="Comprovante da partida" class="w-full md:w-36 h-24 object-cover rounded border border-nord-border hover:opacity-80 transition">
+                        </a>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="space-y-2 flex-grow">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] px-2 py-0.5 rounded font-bold uppercase">PARTIDA REGISTRADA</span>
+                            <span class="text-xs font-mono text-gray-400">${m.date}</span>
+                            ${m.map ? `<span class="text-xs bg-nord-border px-2 py-0.5 rounded text-gray-300 font-mono">${m.map}</span>` : ''}
+                        </div>
+                        <div class="text-xs text-gray-400">Jogadores em Partida (${m.players ? m.players.length : 0}):</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-1">
+                            ${playersHtml}
+                        </div>
+                    </div>
+                    ${photoSection}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // MODAL DE REGISTRAR PARTIDA E ABAS DINÂMICAS DOS JOGADORES
+        function openMatchModal() {
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Apenas administradores podem registrar partidas!", "error");
+                return;
+            }
+
+            document.getElementById('match-photo-url').value = '';
+            document.getElementById('match-photo-file').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            currentPhotoBase64 = "";
+
+            renderMatchPlayerTabs();
+            document.getElementById('modal-match').classList.remove('hidden');
+        }
+
+        function closeMatchModal() {
+            document.getElementById('modal-match').classList.add('hidden');
+        }
+
+        function previewPhotoInput() {
+            const url = document.getElementById('match-photo-url').value.trim();
+            const previewContainer = document.getElementById('photo-preview-container');
+            const previewImg = document.getElementById('photo-preview');
+            
+            if (url) {
+                previewImg.src = url;
+                previewContainer.classList.remove('hidden');
+                currentPhotoBase64 = url;
+            } else {
+                previewContainer.classList.add('hidden');
+                currentPhotoBase64 = "";
+            }
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentPhotoBase64 = e.target.result;
+                    const previewContainer = document.getElementById('photo-preview-container');
+                    const previewImg = document.getElementById('photo-preview');
+                    previewImg.src = currentPhotoBase64;
+                    previewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderMatchPlayerTabs() {
+            const count = parseInt(document.getElementById('match-player-count').value);
+            
+            // Inicializar array de players ativos se necessário
+            if (!activeMatchPlayers || activeMatchPlayers.length !== count) {
+                activeMatchPlayers = [];
+                for(let i = 0; i < count; i++) {
+                    activeMatchPlayers.push({
+                        name: PLAYERS_LIST[i % PLAYERS_LIST.length].name,
+                        kills: 0,
+                        wins: 1,
+                        honor: false
+                    });
+                }
+            }
+            activeMatchTab = 0;
+
+            buildTabsUI();
+        }
+
+        function buildTabsUI() {
+            const headersContainer = document.getElementById('match-tabs-header');
+            const bodyContainer = document.getElementById('match-tabs-body');
+            
+            headersContainer.innerHTML = '';
+            bodyContainer.innerHTML = '';
+
+            activeMatchPlayers.forEach((playerData, idx) => {
+                // Header Tab
+                const tabBtn = document.createElement('button');
+                tabBtn.type = 'button';
+                tabBtn.onclick = () => { activeMatchTab = idx; buildTabsUI(); };
+                
+                const isSelected = activeMatchTab === idx;
+                tabBtn.className = `px-3 py-1.5 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 transition ${isSelected ? 'bg-nord-accent text-black font-bold' : 'bg-nord-base text-gray-400 hover:text-white border border-nord-border'}`;
+                tabBtn.innerHTML = `<i class="fa-solid fa-user"></i> Jogador ${idx + 1}: ${playerData.name}`;
+                headersContainer.appendChild(tabBtn);
+            });
+
+            // Active Tab Content
+            const pData = activeMatchPlayers[activeMatchTab];
+            const activeContent = document.createElement('div');
+            activeContent.className = "bg-nord-base p-4 rounded-b-lg border border-nord-border space-y-4 animate-fade-in";
+            
+            // Gerar opções de seleção de jogador
+            let optionsHtml = PLAYERS_LIST.map(p => {
+                return `<option value="${p.name}" ${p.name === pData.name ? 'selected' : ''}>${p.name} ${p.isAdmin ? '(ADM)' : ''}</option>`;
+            }).join('');
+
+            activeContent.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Nome do Jogador ${activeMatchTab + 1}</label>
+                        <select onchange="updateActivePlayerData('name', this.value)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Quantidade de Kills</label>
+                        <input type="number" min="0" value="${pData.kills}" onchange="updateActivePlayerData('kills', parseInt(this.value) || 0)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                        <span class="text-[10px] text-gray-400 mt-0.5 block">+1 ponto a cada 15 kills</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Vitórias Nesta Partida</label>
+                        <input type="number" min="1" value="${pData.wins}" onchange="updateActivePlayerData('wins', parseInt(this.value) || 1)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                        <span class="text-[10px] text-gray-400 mt-0.5 block">+1 ponto por vitória</span>
+                    </div>
+
+                    <div class="flex items-center pt-4">
+                        <label class="flex items-center gap-2 cursor-pointer bg-nord-card p-2.5 rounded border border-nord-border w-full">
+                            <input type="checkbox" ${pData.honor ? 'checked' : ''} onchange="updateActivePlayerData('honor', this.checked)" class="w-4 h-4 rounded text-amber-400 bg-nord-base border-nord-border">
+                            <span class="text-xs font-semibold text-amber-400 flex items-center gap-1">
+                                <i class="fa-solid fa-medal"></i> Ganhou Ponto de Honra (+1pt)
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            `;
+            bodyContainer.appendChild(activeContent);
+        }
+
+        function updateActivePlayerData(field, val) {
+            activeMatchPlayers[activeMatchTab][field] = val;
+            if(field === 'name') buildTabsUI();
+        }
+
+        async function handleSaveMatch(e) {
+            e.preventDefault();
+
+            // Validação de nomes duplicados na mesma partida
+            const names = activeMatchPlayers.map(p => p.name);
+            const hasDuplicates = new Set(names).size !== names.length;
+            if (hasDuplicates) {
+                showToast("Não é possível registrar o mesmo jogador mais de uma vez na partida!", "warning");
+                return;
+            }
+
+            if (activeMatchPlayers.length < 2) {
+                showToast("É necessário no mínimo 2 jogadores da NORD por partida!", "warning");
+                return;
+            }
+
+            const map = document.getElementById('match-map').value.trim();
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const newMatch = {
+                date: dateStr,
+                timestamp: Date.now(),
+                map: map,
+                photo: currentPhotoBase64,
+                players: activeMatchPlayers
+            };
+
+            // Salvar no Firestore
+            if (window.FB_DB) {
+                try {
+                    const matchId = `match_${Date.now()}`;
+                    await setDoc(window.getPublicDocRef('matches', matchId), newMatch);
+                } catch(err) {
+                    console.error("Erro ao salvar partida no Firebase:", err);
+                }
+            } else {
+                window.appData.matches.push(newMatch);
+                window.renderAll();
+            }
+
+            closeMatchModal();
+            showToast("Partida e pontuações gravadas no Firebase com sucesso!", "success");
+        }
+
+        // RESETAR MÊS E ACUMULAR ANUAL NO FIREBASE
+        async function confirmResetMonth() {
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Apenas administradores podem fechar o mês!", "error");
+                return;
+            }
+
+            if (confirm("Tem certeza que deseja fechar o mês atual?\n\n- Cada 10 pontos do mês viram 1 ponto no Rank Anual.\n- O histórico do mês será arquivado para o próximo período.")) {
+                
+                const monthlyStats = calculateMonthlyStats();
+
+                for (const p of monthlyStats) {
+                    const tens = Math.floor(p.totalPoints / 10);
+                    if (tens > 0) {
+                        const currentAnnual = window.appData.annualPoints[p.name] || 0;
+                        const newAnnual = currentAnnual + tens;
+                        window.appData.annualPoints[p.name] = newAnnual;
+
+                        if (window.FB_DB) {
+                            try {
+                                await setDoc(window.getPublicDocRef('annual', p.name), { points: newAnnual });
+                            } catch(err) {
+                                console.error("Erro ao atualizar rank anual:", err);
+                            }
+                        }
+                    }
+                }
+
+                // Deletar ou limpar partidas no Firebase
+                if (window.FB_DB) {
+                    window.appData.matches.forEach(async (m) => {
+                        try {
+                            if (m.id) {
+                                const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                                await deleteDoc(window.getPublicDocRef('matches', m.id));
+                            }
+                        } catch(e){}
+                    });
+                }
+                window.appData.matches = [];
+                window.renderAll();
+
+                showToast("Mês encerrado com sucesso! Os pontos foram acumulados no Rank Anual.", "success");
+            }
+        }
+    </script>
+</body>
+</html>
