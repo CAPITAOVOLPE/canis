@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS2 NORD Team - Sistema de Ranks</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Time NORD - CS2 Competitive Ranking</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,14 +13,21 @@
                 extend: {
                     colors: {
                         nord: {
-                            base: '#0B0F19',
-                            card: '#151C2C',
-                            border: '#2A354D',
-                            accent: '#F59E0B', // Amarelo CS
-                            blue: '#3B82F6',
-                            red: '#EF4444',
-                            green: '#10B981',
+                            bg: '#0b0e14',
+                            card: '#151921',
+                            cardLight: '#1e2430',
+                            border: '#2a3245',
+                            cyan: '#00f0ff',
+                            orange: '#ff5500',
+                            gold: '#ffd700',
+                            silver: '#c0c0c0',
+                            bronze: '#cd7f32'
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
                     }
                 }
             }
@@ -28,314 +35,219 @@
     </script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter & Orbitron -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0B0F19;
-            color: #E2E8F0;
+            background-color: #0b0e14;
+            color: #e2e8f0;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 90% 90%, rgba(255, 85, 0, 0.05) 0%, transparent 45%);
+            background-attachment: fixed;
         }
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
-        }
+        .font-display { font-family: 'Orbitron', sans-serif; }
+        .glow-cyan { box-shadow: 0 0 20px rgba(0, 240, 255, 0.25); }
+        .glow-orange { box-shadow: 0 0 20px rgba(255, 85, 0, 0.25); }
+        .glow-gold { box-shadow: 0 0 25px rgba(255, 215, 0, 0.3); }
+        
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0B0F19;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2A354D;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3B82F6;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0e14; }
+        ::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
     </style>
-
-    <!-- Firebase Modular Imports -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Configuração direta do Firebase do usuário
-        const firebaseConfig = {
-            apiKey: "AIzaSyAerJxRg8JF2W2DLLCLrI7d9pIFNprMQl0",
-            authDomain: "chatcat-73364.firebaseapp.com",
-            databaseURL: "https://chatcat-73364-default-rtdb.firebaseio.com",
-            projectId: "chatcat-73364",
-            storageBucket: "chatcat-73364.firebasestorage.app",
-            messagingSenderId: "645503800079",
-            appId: "1:645503800079:web:850860c42bec8a73e0e47a",
-            measurementId: "G-1K6TJ1G44X"
-        };
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cs2-nord-rank-default';
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Exportação para o escopo global
-        window.FB_APP = app;
-        window.FB_AUTH = auth;
-        window.FB_DB = db;
-        window.FB_APP_ID = appId;
-
-        // Referências estritas conforme regras da plataforma
-        window.getPublicDocRef = (collName, docId) => doc(db, 'artifacts', appId, 'public', 'data', collName, docId);
-        window.getPublicCollRef = (collName) => collection(db, 'artifacts', appId, 'public', 'data', collName);
-
-        // Inicialização de autenticação e listeners do Firestore
-        async function initAuthAndFirestore() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.warn("Autenticação anônima efetuada:", err);
-                try { await signInAnonymously(auth); } catch(e){}
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                if (!user) return;
-
-                // Listener de Usuários / Senhas
-                onSnapshot(window.getPublicCollRef('users'), (snapshot) => {
-                    snapshot.forEach(docSnap => {
-                        window.appData.users[docSnap.id] = docSnap.data();
-                    });
-                    window.renderAll();
-                }, (err) => console.error("Erro usuarios:", err));
-
-                // Listener de Partidas
-                onSnapshot(window.getPublicCollRef('matches'), (snapshot) => {
-                    let loadedMatches = [];
-                    snapshot.forEach(docSnap => {
-                        loadedMatches.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-                    loadedMatches.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-                    window.appData.matches = loadedMatches;
-                    window.renderAll();
-                }, (err) => console.error("Erro partidas:", err));
-
-                // Listener de Pontos Anuais
-                onSnapshot(window.getPublicCollRef('annual'), (snapshot) => {
-                    snapshot.forEach(docSnap => {
-                        window.appData.annualPoints[docSnap.id] = docSnap.data().points || 0;
-                    });
-                    window.renderAll();
-                }, (err) => console.error("Erro anual:", err));
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initAuthAndFirestore();
-        });
-    </script>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-nord-accent selection:text-black">
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-nord-cyan selection:text-black">
 
-    <!-- NAV BAR -->
-    <header class="bg-nord-card/80 backdrop-blur border-b border-nord-border sticky top-0 z-40">
+    <!-- Header Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-nord-bg/95 backdrop-blur-md border-b border-nord-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                        <i class="fa-solid font-black text-xl text-black">N</i>
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Brand Logo / Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('monthly')">
+                    <div class="w-12 h-12 bg-gradient-to-br from-nord-cyan via-nord-orange to-amber-500 rounded-xl flex items-center justify-center font-black text-black text-2xl shadow-lg transform -rotate-3 font-display">
+                        N
                     </div>
                     <div>
-                        <span class="font-orbitron font-bold text-xl tracking-wider text-white">NORD <span class="text-nord-accent">CS2</span></span>
-                        <span class="hidden sm:inline-block text-xs bg-nord-border text-gray-300 px-2 py-0.5 rounded ml-2 font-mono" id="current-month-badge">Temporada Ativa</span>
+                        <span class="text-2xl font-black tracking-wider uppercase text-white flex items-center gap-2 font-display">
+                            TIME <span class="text-nord-cyan">NORD</span>
+                            <span class="text-xs px-2 py-0.5 rounded bg-nord-orange/20 text-nord-orange border border-nord-orange/40 font-mono">CS2 RANK</span>
+                        </span>
+                        <p class="text-xs text-gray-400 font-medium tracking-widest uppercase">Competitive Leaderboard</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div id="user-info-bar" class="hidden flex items-center gap-3 bg-nord-base px-3 py-1.5 rounded-lg border border-nord-border">
+                <!-- Navigation Tabs (Desktop) -->
+                <nav class="hidden md:flex space-x-2 bg-nord-card p-1.5 rounded-xl border border-nord-border">
+                    <button id="nav-monthly" onclick="switchTab('monthly')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-cyan text-black shadow-md font-display tracking-wide">
+                        <i class="fa-solid fa-trophy"></i> Rank Mensal
+                    </button>
+                    <button id="nav-annual" onclick="switchTab('annual')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide">
+                        <i class="fa-solid fa-crown"></i> Rank Anual (Top 5)
+                    </button>
+                    <button id="nav-matches" onclick="switchTab('matches')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide">
+                        <i class="fa-solid fa-crosshairs"></i> Histórico
+                    </button>
+                </nav>
+
+                <!-- Auth / User Area -->
+                <div class="flex items-center gap-3">
+                    <div id="user-status-container" class="hidden sm:flex items-center gap-3 bg-nord-card px-4 py-2 rounded-xl border border-nord-border">
                         <div class="text-right">
-                            <div id="logged-user-name" class="font-semibold text-sm text-white leading-none"></div>
-                            <div id="logged-user-role" class="text-[10px] font-mono text-nord-accent leading-tight"></div>
+                            <div id="logged-user-name" class="font-bold text-sm text-white">--</div>
+                            <div id="logged-user-role" class="text-[10px] text-nord-cyan font-mono uppercase tracking-wider">--</div>
                         </div>
-                        <button onclick="logout()" class="text-gray-400 hover:text-red-400 transition-colors p-1" title="Sair">
+                        <button onclick="logout()" title="Sair da Conta" class="text-gray-400 hover:text-nord-orange transition-colors p-2 rounded-lg hover:bg-nord-border/50">
                             <i class="fa-solid fa-right-from-bracket"></i>
                         </button>
                     </div>
-                    <button id="btn-open-login" onclick="showLoginModal()" class="bg-nord-accent hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-amber-500/10 flex items-center gap-2">
-                        <i class="fa-solid fa-user"></i> Entrar
+
+                    <button id="btn-open-login" onclick="openLoginModal()" class="px-4 py-2.5 rounded-xl bg-nord-cyan/10 border border-nord-cyan/30 text-nord-cyan hover:bg-nord-cyan hover:text-black font-bold text-sm transition-all flex items-center gap-2 font-display tracking-wide">
+                        <i class="fa-solid fa-user-shield"></i> Entrar
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-gray-400 hover:text-white p-2">
+                        <i class="fa-solid fa-bars text-xl"></i>
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-b border-nord-border bg-nord-card px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchTab('monthly'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
+                <i class="fa-solid fa-trophy text-nord-cyan"></i> Rank Mensal
+            </button>
+            <button onclick="switchTab('annual'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
+                <i class="fa-solid fa-crown text-nord-orange"></i> Rank Anual (Top 5)
+            </button>
+            <button onclick="switchTab('matches'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
+                <i class="fa-solid fa-crosshairs text-gray-400"></i> Histórico de Partidas
+            </button>
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-        
-        <!-- TOP ACTIONS & STATS -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Card Status -->
-            <div class="bg-nord-card rounded-xl p-5 border border-nord-border relative overflow-hidden">
-                <div class="absolute -right-4 -bottom-4 text-nord-border/30 text-7xl font-bold">
-                    <i class="fa-solid fa-calendar-alt"></i>
+    <!-- Main Content Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Admin Control Toolbar (Visible ONLY to ADMs) -->
+        <div id="admin-toolbar" class="hidden mb-8 p-4 bg-gradient-to-r from-nord-orange/15 via-nord-card to-nord-cyan/15 border border-nord-orange/40 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-nord-orange/20 border border-nord-orange/50 flex items-center justify-center text-nord-orange font-bold">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
                 </div>
-                <h3 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1">Status da Temporada</h3>
-                <div class="text-2xl font-orbitron font-bold text-white mb-2">Rank Mensal & Anual</div>
-                <p class="text-xs text-gray-400">O rank mensal é resetado no fim do mês. Cada 10 pts viram 1 pt no Rank Anual!</p>
-            </div>
-
-            <!-- Card Regras de Pontuação -->
-            <div class="bg-nord-card rounded-xl p-5 border border-nord-border relative overflow-hidden">
-                <h3 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2"><i class="fa-solid fa-circle-info text-nord-accent mr-1"></i> Regras de Pontuação</h3>
-                <ul class="text-xs space-y-1 text-gray-300">
-                    <li>• <strong>Mínimo:</strong> 2 Jogadores NORD na partida</li>
-                    <li>• <strong>Vitória:</strong> +1 ponto por vitória registrada</li>
-                    <li>• <strong>Kills:</strong> +1pt a cada 15 kills (ex: 20=1pt, 30=2pts)</li>
-                    <li>• <strong>Honra:</strong> +1 ponto por honra concedida</li>
-                </ul>
-            </div>
-
-            <!-- Card Ação de ADM -->
-            <div class="bg-nord-card rounded-xl p-5 border border-nord-border flex flex-col justify-between">
                 <div>
-                    <h3 class="text-nord-accent text-xs font-semibold uppercase tracking-wider mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Painel de Administração</h3>
-                    <p class="text-xs text-gray-400">Admins registrados podem registrar partidas e fechar a temporada mensal.</p>
+                    <h3 class="font-bold text-white text-base font-display">PAINEL ADMINISTRATIVO</h3>
+                    <p class="text-xs text-gray-400">Gerenciamento restrito aos Capitães NORD</p>
                 </div>
-                <div class="flex gap-2 mt-4">
-                    <button id="btn-add-match" onclick="openMatchModal()" disabled class="flex-1 bg-nord-blue hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-plus"></i> Registrar Partida
-                    </button>
-                    <button id="btn-reset-month" onclick="confirmResetMonth()" disabled class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5" title="Resetar Mês e Acumular Anual">
-                        <i class="fa-solid fa-rotate-left"></i> Fechar Mês
-                    </button>
-                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <button onclick="openMatchModal()" class="px-4 py-2.5 rounded-xl bg-nord-orange hover:bg-orange-600 text-white font-black text-xs uppercase font-display tracking-wider transition-all shadow-lg flex items-center gap-2 glow-orange">
+                    <i class="fa-solid fa-plus-circle"></i> Lançar Partida
+                </button>
+                <button onclick="confirmResetMonth()" class="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-bold text-xs uppercase font-display tracking-wider transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Resetar Mês (Virada)
+                </button>
             </div>
         </div>
 
-        <!-- TABS NAV -->
-        <div class="flex border-b border-nord-border mb-6">
-            <button onclick="switchTab('mensal')" id="tab-mensal" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-nord-accent text-nord-accent flex items-center gap-2 transition">
-                <i class="fa-solid fa-trophy"></i> Rank Mensal
-            </button>
-            <button onclick="switchTab('anual')" id="tab-anual" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
-                <i class="fa-solid fa-crown text-yellow-500"></i> Rank Anual (TOP 5)
-            </button>
-            <button onclick="switchTab('historico')" id="tab-historico" class="px-6 py-3 font-orbitron text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
-                <i class="fa-solid fa-history"></i> Histórico de Partidas
-            </button>
-        </div>
-
-        <!-- RANK MENSAL TAB -->
-        <div id="content-mensal" class="tab-content">
-            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
-                <div class="p-4 bg-nord-base/50 border-b border-nord-border flex justify-between items-center">
-                    <h2 class="font-orbitron text-lg font-bold text-white flex items-center gap-2">
-                        <span>Classificação do Mês</span>
-                    </h2>
-                    <span class="text-xs text-gray-400"><i class="fa-solid fa-bolt text-amber-400"></i> Atualizado em tempo real</span>
+        <!-- ================= TAB 1: RANK MENSAL ================= -->
+        <section id="tab-monthly" class="space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-nord-card p-6 rounded-2xl border border-nord-border shadow-lg">
+                <div>
+                    <h1 class="text-2xl font-black uppercase text-white tracking-wide flex items-center gap-3 font-display">
+                        <i class="fa-solid fa-fire text-nord-orange"></i> Ranking Mensal NORD
+                    </h1>
+                    <p class="text-sm text-gray-400 mt-1">Pontuação acumulada de partidas no mês vigente (Vitórias + Kills + Honra)</p>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-nord-border bg-nord-base/30 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                <th class="py-3 px-4 text-center">#</th>
-                                <th class="py-3 px-4">Jogador</th>
-                                <th class="py-3 px-4 text-center">Tipo</th>
-                                <th class="py-3 px-4 text-center">Vitórias</th>
-                                <th class="py-3 px-4 text-center">Total Kills</th>
-                                <th class="py-3 px-4 text-center">Honras</th>
-                                <th class="py-3 px-4 text-center">Estimativa Anual</th>
-                                <th class="py-3 px-4 text-right">Pontuação Mensal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-mensal-body" class="divide-y divide-nord-border text-sm">
-                            <!-- Preenchido via Javascript -->
-                        </tbody>
-                    </table>
+                <div class="flex items-center gap-3 bg-nord-bg px-4 py-2.5 rounded-xl border border-nord-border">
+                    <span class="text-xs font-mono text-gray-400 uppercase">Validação da Partida:</span>
+                    <span class="text-xs font-bold text-nord-cyan bg-nord-cyan/10 px-2.5 py-1 rounded border border-nord-cyan/30">
+                        Mínimo 2 NORDs
+                    </span>
                 </div>
             </div>
-        </div>
 
-        <!-- RANK ANUAL TAB -->
-        <div id="content-anual" class="tab-content hidden">
-            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
-                <div class="p-4 bg-nord-base/50 border-b border-nord-border flex justify-between items-center">
-                    <div>
-                        <h2 class="font-orbitron text-lg font-bold text-amber-400 flex items-center gap-2">
-                            <i class="fa-solid fa-star"></i> Hall da Fama Anual - TOP 5
-                        </h2>
-                        <p class="text-xs text-gray-400">Cada 10 pontos do rank mensal equivalem a 1 ponto acumulado no Rank Anual.</p>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <!-- PODIUM TOP 3 -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 items-end" id="podium-container">
-                        <!-- Podio montado dinamicamente -->
-                    </div>
+            <!-- Leaderboard Grid -->
+            <div id="monthly-rank-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Dynamic Player Cards Loaded Here -->
+            </div>
+        </section>
 
-                    <!-- TABELA COMPLETA TOP 5 -->
-                    <div class="overflow-x-auto rounded-lg border border-nord-border">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-nord-border bg-nord-base/40 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                    <th class="py-3 px-4 text-center">Posição</th>
-                                    <th class="py-3 px-4">Jogador</th>
-                                    <th class="py-3 px-4 text-center">Múltiplos Mensais Convertidos</th>
-                                    <th class="py-3 px-4 text-right">Pontos Anuais</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-anual-body" class="divide-y divide-nord-border text-sm">
-                                <!-- Preenchido via Javascript -->
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- ================= TAB 2: RANK ANUAL (TOP 5) ================= -->
+        <section id="tab-annual" class="hidden space-y-8">
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <h1 class="text-3xl font-black uppercase tracking-wider text-white flex items-center justify-center gap-3 font-display">
+                    <i class="fa-solid fa-crown text-nord-gold text-3xl"></i> Rank Anual NORD
+                </h1>
+                <p class="text-sm text-gray-400">
+                    Hall da Fama Top 5 da equipe. Cada 10 pontos mensais no encerramento convertem em +1 Ponto Anual.
+                </p>
+            </div>
+
+            <!-- Podium Visual (Top 3) -->
+            <div id="annual-podium" class="flex flex-col md:flex-row items-end justify-center gap-4 pt-10 pb-4 max-w-4xl mx-auto">
+                <!-- Dynamically rendered podium positions: 2nd, 1st, 3rd -->
+            </div>
+
+            <!-- Top 4 & 5 List -->
+            <div class="max-w-3xl mx-auto space-y-3">
+                <h3 class="text-xs font-mono text-gray-400 uppercase tracking-widest px-2 font-display">Outras Posições do Top 5</h3>
+                <div id="annual-rest-list" class="space-y-3">
+                    <!-- Loaded dynamically -->
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- HISTÓRICO DE PARTIDAS TAB -->
-        <div id="content-historico" class="tab-content hidden">
-            <div class="bg-nord-card rounded-xl border border-nord-border overflow-hidden shadow-xl">
-                <div class="p-4 bg-nord-base/50 border-b border-nord-border">
-                    <h2 class="font-orbitron text-lg font-bold text-white">Partidas Registradas no Mês</h2>
-                </div>
-                <div class="p-4 space-y-4" id="match-history-list">
-                    <!-- Cards de partidas preenchidos via JS -->
+        <!-- ================= TAB 3: HISTÓRICO DE PARTIDAS ================= -->
+        <section id="tab-matches" class="hidden space-y-6">
+            <div class="flex items-center justify-between bg-nord-card p-6 rounded-2xl border border-nord-border shadow-lg">
+                <div>
+                    <h1 class="text-2xl font-black uppercase text-white tracking-wide flex items-center gap-3 font-display">
+                        <i class="fa-solid fa-clock-rotate-left text-nord-cyan"></i> Histórico de Confrontos
+                    </h1>
+                    <p class="text-sm text-gray-400 mt-1">Registro detalhado com comprovantes de partidas jogadas pelo time</p>
                 </div>
             </div>
-        </div>
+
+            <div id="match-history-list" class="space-y-4">
+                <!-- Dynamically populated matches -->
+            </div>
+        </section>
 
     </main>
 
-    <!-- FOOTER -->
-    <footer class="bg-nord-card border-t border-nord-border py-4 text-center text-xs text-gray-500">
-        <p>CS2 NORD Team Rank System &copy; 2026 - Orgulhosamente desenvolvido para a NORD.</p>
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-nord-border bg-nord-card/50 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500 font-mono">
+            TIME NORD CS2 &copy; 2026 - COMPETITIVE SYSTEM &bull; FIRESTORE CLOUD REALTIME SYNC
+        </div>
     </footer>
 
-    <!-- MODAL DE LOGIN -->
-    <div id="modal-login" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-nord-card border border-nord-border rounded-xl w-full max-w-md p-6 shadow-2xl relative">
-            <button onclick="hideLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- ================= MODAL: LOGIN / CADASTRO DE SENHA ================= -->
+    <div id="modal-login" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-nord-card border border-nord-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
             </button>
-            <div class="text-center mb-6">
-                <div class="w-12 h-12 bg-nord-accent/20 border border-nord-accent/40 rounded-full flex items-center justify-center mx-auto mb-2 text-nord-accent">
-                    <i class="fa-solid fa-shield-halved text-xl"></i>
+
+            <div class="text-center space-y-2 mb-6">
+                <div class="w-12 h-12 bg-nord-cyan/10 border border-nord-cyan/30 text-nord-cyan rounded-xl flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-user-lock"></i>
                 </div>
-                <h3 class="font-orbitron text-xl font-bold text-white">Autenticação NORD</h3>
-                <p class="text-xs text-gray-400 mt-1">Selecione seu nick para entrar. No primeiro acesso, a senha digitada será cadastrada.</p>
+                <h2 class="text-xl font-black text-white font-display uppercase tracking-wide">Autenticação NORD</h2>
+                <p class="text-xs text-gray-400">Selecione seu nick. Na 1ª vez, a senha informada será registrada no Firestore.</p>
             </div>
 
-            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Selecione o Jogador / ADM</label>
-                    <select id="login-user-select" required class="w-full bg-nord-base border border-nord-border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-nord-accent text-sm">
-                        <option value="" disabled selected>Escolha seu usuário...</option>
-                        <optgroup label="Administradores">
+                    <label class="block text-xs font-mono text-gray-300 uppercase mb-2">Selecione seu Usuário</label>
+                    <select id="login-username" required class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white focus:outline-none focus:border-nord-cyan text-sm font-bold">
+                        <option value="" disabled selected>-- Selecione um membro --</option>
+                        <optgroup label="Administradores (ADMs)">
                             <option value="capitao NORD">capitao NORD</option>
                             <option value="Mateus NORD">Mateus NORD</option>
                             <option value="Zyrax NORD">Zyrax NORD</option>
@@ -351,670 +263,743 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Senha</label>
-                    <input type="password" id="login-password" required placeholder="Digite sua senha..." class="w-full bg-nord-base border border-nord-border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-nord-accent text-sm">
-                    <p class="text-[11px] text-nord-accent/80 mt-1" id="login-password-hint">Novo usuário? A senha informada agora se tornará sua senha oficial.</p>
+                    <label class="block text-xs font-mono text-gray-300 uppercase mb-2">Senha de Acesso</label>
+                    <input type="password" id="login-password" required placeholder="Digite sua senha..." class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white focus:outline-none focus:border-nord-cyan text-sm">
                 </div>
 
-                <button type="submit" class="w-full bg-nord-accent hover:bg-amber-400 text-black font-bold py-2.5 rounded-lg transition text-sm font-orbitron mt-2">
+                <div id="login-error" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold text-center"></div>
+
+                <button type="submit" class="w-full py-3 bg-nord-cyan hover:bg-cyan-400 text-black font-black uppercase text-sm rounded-xl transition-all shadow-lg glow-cyan font-display tracking-wider">
                     Entrar no Sistema
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL REGISTRAR PARTIDA (ADM) -->
-    <div id="modal-match" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-nord-card border border-nord-border rounded-xl w-full max-w-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
-            <button onclick="closeMatchModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
+    <!-- ================= MODAL: LANÇAR PARTIDA (ADM) ================= -->
+    <div id="modal-match" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4 overflow-y-auto">
+        <div class="bg-nord-card border border-nord-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl my-8 relative max-h-[90vh] flex flex-col">
             
-            <div class="mb-4">
-                <h3 class="font-orbitron text-xl font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-nord-accent"></i> Registrar Partida da NORD
-                </h3>
-                <p class="text-xs text-gray-400">Escolha a quantidade de membros e preencha as abas de cada jogador com as informações e foto da partida.</p>
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-nord-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-nord-orange/20 text-nord-orange border border-nord-orange/40 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-white font-display uppercase tracking-wide">Registrar Nova Partida</h2>
+                        <p class="text-xs text-gray-400">Insira as estatísticas dos integrantes NORD participantes</p>
+                    </div>
+                </div>
+                <button onclick="closeMatchModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <form id="form-match" onsubmit="handleSaveMatch(event)" class="flex-grow overflow-y-auto space-y-4 pr-1">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-nord-base/50 p-3 rounded-lg border border-nord-border">
+            <!-- Modal Content Form -->
+            <form id="form-match" onsubmit="handleMatchSubmit(event)" class="space-y-6 pt-4 overflow-y-auto pr-1">
+                
+                <!-- Number of Participants -->
+                <div class="bg-nord-bg/60 p-4 rounded-xl border border-nord-border flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Quantos Membros em Partida?</label>
-                        <select id="match-player-count" onchange="renderMatchPlayerTabs()" class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
-                            <option value="2">2 Jogadores</option>
-                            <option value="3">3 Jogadores</option>
-                            <option value="4">4 Jogadores</option>
-                            <option value="5" selected>5 Jogadores</option>
-                        </select>
+                        <label class="block text-sm font-bold text-white font-display">Quantidade de Jogadores NORD</label>
+                        <p class="text-xs text-gray-400">Mínimo obrigatório: 2 jogadores</p>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Mapa / Info (Opcional)</label>
-                        <input type="text" id="match-map" placeholder="Ex: Mirage, Inferno, Dust II..." class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
+                    <select id="match-player-count" onchange="renderMatchPlayerForms()" class="bg-nord-bg border border-nord-border rounded-lg px-4 py-2 text-nord-cyan font-bold focus:outline-none focus:border-nord-cyan text-sm">
+                        <option value="2">2 Jogadores</option>
+                        <option value="3">3 Jogadores</option>
+                        <option value="4">4 Jogadores</option>
+                        <option value="5" selected>5 Jogadores</option>
+                    </select>
+                </div>
+
+                <!-- Proof Image Selection -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-mono text-gray-300 uppercase">Comprovante da Partida (Screenshot)</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <input type="text" id="match-image-url" placeholder="URL da imagem (https://...)" class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white text-xs focus:outline-none focus:border-nord-cyan">
+                        </div>
+                        <div class="relative">
+                            <input type="file" id="match-image-file" accept="image/*" onchange="handleFileUpload(event)" class="hidden">
+                            <label for="match-image-file" class="w-full bg-nord-bg border border-nord-border hover:border-nord-cyan rounded-xl p-2.5 text-gray-400 hover:text-white text-xs flex items-center justify-center gap-2 cursor-pointer transition-all">
+                                <i class="fa-solid fa-upload text-nord-cyan"></i>
+                                <span id="file-upload-label">Carregar Arquivo Local</span>
+                            </label>
+                        </div>
+                    </div>
+                    <input type="hidden" id="match-image-base64">
+                </div>
+
+                <!-- Dynamic Players List Container -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-mono text-gray-400 uppercase tracking-wider font-display">Desempenho por Membro</h3>
+                    <div id="match-players-container" class="space-y-4">
+                        <!-- Dynamic player rows rendered here -->
                     </div>
                 </div>
 
-                <!-- Foto de Registro / Print da Partida -->
-                <div class="bg-nord-base/50 p-3 rounded-lg border border-nord-border space-y-2">
-                    <label class="block text-xs font-semibold text-gray-300 uppercase">
-                        <i class="fa-solid fa-image text-nord-accent mr-1"></i> Foto de Registro da Partida (URL ou Upload)
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="url" id="match-photo-url" oninput="previewPhotoInput()" placeholder="Cole a URL da imagem/screenshot..." class="w-full bg-nord-base border border-nord-border rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-nord-accent">
-                        <input type="file" id="match-photo-file" accept="image/*" onchange="handlePhotoUpload(event)" class="w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-nord-border file:text-white hover:file:bg-nord-accent hover:file:text-black">
-                    </div>
-                    <div id="photo-preview-container" class="hidden mt-2">
-                        <img id="photo-preview" src="" alt="Preview da Imagem" class="max-h-36 rounded border border-nord-border object-cover">
-                    </div>
-                </div>
-
-                <!-- ABAS E FORMULÁRIO DINÂMICO DOS JOGADORES -->
-                <div>
-                    <div id="match-tabs-header" class="flex flex-wrap gap-2 border-b border-nord-border pb-2 mb-3">
-                        <!-- Botões de abas gerados por JS -->
-                    </div>
-                    <div id="match-tabs-body">
-                        <!-- Conteúdo da aba selecionada gerado por JS -->
-                    </div>
-                </div>
-
+                <!-- Action Footer -->
                 <div class="pt-4 border-t border-nord-border flex justify-end gap-3">
-                    <button type="button" onclick="closeMatchModal()" class="px-4 py-2 bg-nord-border text-gray-300 hover:text-white rounded-lg text-sm">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-nord-blue hover:bg-blue-600 text-white font-semibold rounded-lg text-sm transition font-orbitron">Salvar Partida</button>
+                    <button type="button" onclick="closeMatchModal()" class="px-5 py-2.5 rounded-xl bg-nord-border hover:bg-nord-border/80 text-gray-300 font-bold text-sm">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-nord-orange hover:bg-orange-600 text-white font-black uppercase text-xs font-display tracking-wider shadow-lg glow-orange transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar & Pontuar
+                    </button>
                 </div>
             </form>
+
         </div>
     </div>
 
-    <!-- NOTIFICAÇÕES TOAST -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+    <!-- Modal Image Preview -->
+    <div id="modal-image-preview" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md hidden p-4" onclick="closeImagePreviewModal()">
+        <div class="relative max-w-4xl w-full" onclick="event.stopPropagation()">
+            <button onclick="closeImagePreviewModal()" class="absolute -top-10 right-0 text-white text-2xl hover:text-nord-cyan">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="preview-modal-img" src="" alt="Comprovante CS2" class="w-full max-h-[85vh] object-contain rounded-2xl border border-nord-border shadow-2xl">
+        </div>
+    </div>
 
-    <!-- JAVASCRIPT APP LOGIC -->
-    <script>
-        // LISTA FIXA DE INTEGRANTES E ROLES
-        const PLAYERS_LIST = [
-            // ADMs
-            { name: "capitao NORD", isAdmin: true },
-            { name: "Mateus NORD", isAdmin: true },
-            { name: "Zyrax NORD", isAdmin: true },
-            // Jogadores
-            { name: "Briza NORD", isAdmin: false },
-            { name: "Silva NORD", isAdmin: false },
-            { name: "Cabo NORD", isAdmin: false },
-            { name: "Arno NORD", isAdmin: false },
-            { name: "Tenente NORD", isAdmin: false },
-        ];
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-        // ESTRUTURA DE DADOS EM MEMÓRIA
-        window.appData = {
-            users: {}, // { "Briza NORD": { password: "123" } }
-            matches: [], // Array de partidas
-            annualPoints: {} // { "Briza NORD": 12 }
+    <!-- ================= JAVASCRIPT & FIREBASE INTEGRATION ================= -->
+    <script type="module">
+        // Firebase Modular SDK Imports matching specified setup
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+        // Required Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAerJxRg8JF2W2DLLCLrI7d9pIFNprMQl0",
+            authDomain: "chatcat-73364.firebaseapp.com",
+            databaseURL: "https://chatcat-73364-default-rtdb.firebaseio.com",
+            projectId: "chatcat-73364",
+            storageBucket: "chatcat-73364.firebasestorage.app",
+            messagingSenderId: "645503800079",
+            appId: "1:645503800079:web:850860c42bec8a73e0e47a",
+            measurementId: "G-1K6TJ1G44X"
         };
 
-        let currentUser = null; // Usuário logado atualmente
-        let activeMatchTab = 0;
-        let activeMatchPlayers = [];
-        let currentPhotoBase64 = "";
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // GERENCIAMENTO DE MENSAGENS / TOASTS
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let bg = 'bg-nord-border text-white';
-            if(type === 'success') bg = 'bg-emerald-600 text-white';
-            if(type === 'error') bg = 'bg-rose-600 text-white';
-            if(type === 'warning') bg = 'bg-amber-500 text-black font-semibold';
+        // Constant Lists
+        const ALL_PLAYERS = [
+            "Briza NORD", "Silva NORD", "Cabo NORD", "Arno NORD", "Tenente NORD"
+        ];
+        const ALL_ADMS = [
+            "capitao NORD", "Mateus NORD", "Zyrax NORD"
+        ];
+        const ALL_MEMBERS = [...ALL_ADMS, ...ALL_PLAYERS];
 
-            toast.className = `${bg} px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2 transition-all duration-300`;
-            toast.innerHTML = `<span>${msg}</span>`;
+        // Global State Tree
+        let appState = {
+            users: {},      // { "Briza NORD": { password: "...", role: "player", monthlyPoints: 0, annualPoints: 0, killsTotal: 0, matchesTotal: 0 } }
+            matches: []     // [ { id: "...", date: "...", registeredBy: "...", image: "...", participants: [...] } ]
+        };
 
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.remove();
-            }, 3500);
-        }
+        let currentUser = null; // Currently logged user object: { name, role }
 
-        // CONTROLADORES DE TABS
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('[id^="tab-"]').forEach(el => {
-                el.classList.remove('border-nord-accent', 'text-nord-accent');
-                el.classList.add('border-transparent', 'text-gray-400');
-            });
+        // Central Document Reference
+        const docRef = doc(db, "nord_team_cs2", "app_data");
 
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-            const activeTabBtn = document.getElementById(`tab-${tabName}`);
-            activeTabBtn.classList.remove('border-transparent', 'text-gray-400');
-            activeTabBtn.classList.add('border-nord-accent', 'text-nord-accent');
-        }
+        // Authenticate anonymously for Firebase access
+        signInAnonymously(auth).then(() => {
+            console.log("Firebase Anonymous Auth Connected.");
+            initFirestoreListener();
+        }).catch(err => {
+            console.error("Firebase Auth error:", err);
+            showToast("Erro de conexão com o Firebase Auth", "error");
+        });
 
-        // MODAL DE LOGIN
-        function showLoginModal() {
-            document.getElementById('modal-login').classList.remove('hidden');
-        }
-
-        function hideLoginModal() {
-            document.getElementById('modal-login').classList.add('hidden');
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById('login-user-select').value;
-            const password = document.getElementById('login-password').value;
-
-            if (!username || !password) {
-                showToast("Preencha todos os campos!", "error");
-                return;
-            }
-
-            // Verifica se usuário tem senha cadastrada no Firebase / Local
-            if (!window.appData.users[username]) {
-                // Primeiro acesso: Cadastra a senha no Firestore
-                window.appData.users[username] = { password: password };
-                if (window.FB_DB) {
-                    try {
-                        await setDoc(window.getPublicDocRef('users', username), { password: password });
-                    } catch(err) {
-                        console.error("Erro ao salvar senha no Firebase:", err);
-                    }
-                }
-                showToast(`Senha registrada com sucesso para ${username}!`, "success");
-            } else {
-                // Acessos posteriores: Valida a senha
-                if (window.appData.users[username].password !== password) {
-                    showToast("Senha incorreta!", "error");
-                    return;
-                }
-            }
-
-            // Login efetuado com sucesso
-            const playerConfig = PLAYERS_LIST.find(p => p.name === username);
-            currentUser = {
-                name: username,
-                isAdmin: playerConfig ? playerConfig.isAdmin : false
-            };
-
-            updateUserInterface();
-            hideLoginModal();
-            document.getElementById('login-password').value = '';
-            showToast(`Bem-vindo, ${currentUser.name}!`, "success");
-        }
-
-        function logout() {
-            currentUser = null;
-            updateUserInterface();
-            showToast("Sessão encerrada com sucesso.");
-        }
-
-        function updateUserInterface() {
-            const btnOpenLogin = document.getElementById('btn-open-login');
-            const userInfoBar = document.getElementById('user-info-bar');
-            const btnAddMatch = document.getElementById('btn-add-match');
-            const btnResetMonth = document.getElementById('btn-reset-month');
-
-            if (currentUser) {
-                btnOpenLogin.classList.add('hidden');
-                userInfoBar.classList.remove('hidden');
-                
-                document.getElementById('logged-user-name').innerText = currentUser.name;
-                document.getElementById('logged-user-role').innerText = currentUser.isAdmin ? "ADMINISTRADOR" : "JOGADOR";
-
-                // Controles de ADM
-                if (currentUser.isAdmin) {
-                    btnAddMatch.disabled = false;
-                    btnResetMonth.disabled = false;
+        // Real-time Firestore Listener
+        function initFirestoreListener() {
+            onSnapshot(docRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    appState = snapshot.data();
+                    ensureInitialStateStructure();
                 } else {
-                    btnAddMatch.disabled = true;
-                    btnResetMonth.disabled = true;
+                    seedInitialState();
                 }
-            } else {
-                btnOpenLogin.classList.remove('hidden');
-                userInfoBar.classList.add('hidden');
-                btnAddMatch.disabled = true;
-                btnResetMonth.disabled = true;
-            }
+                renderAllUI();
+            }, (error) => {
+                console.error("Firestore Listener error:", error);
+                showToast("Erro ao sincronizar dados do Firestore", "error");
+            });
         }
 
-        // CÁLCULO DE PONTUAÇÃO MENSAL
-        function calculateMonthlyStats() {
-            const stats = {};
-            PLAYERS_LIST.forEach(p => {
-                stats[p.name] = {
-                    name: p.name,
-                    isAdmin: p.isAdmin,
-                    wins: 0,
-                    kills: 0,
-                    honors: 0,
-                    totalPoints: 0
+        function seedInitialState() {
+            const initialUsers = {};
+            ALL_MEMBERS.forEach(name => {
+                initialUsers[name] = {
+                    password: null, // Initialized on first user login
+                    role: ALL_ADMS.includes(name) ? "admin" : "player",
+                    monthlyPoints: 0,
+                    annualPoints: 0,
+                    killsTotal: 0,
+                    matchesTotal: 0
                 };
             });
 
-            // Processa todas as partidas salvas
-            (window.appData.matches || []).forEach(match => {
-                (match.players || []).forEach(p => {
-                    if (stats[p.name]) {
-                        const winsCount = parseInt(p.wins || 1);
-                        stats[p.name].wins += winsCount; // Soma quantidade de vitórias registradas
-                        stats[p.name].kills += parseInt(p.kills || 0);
-                        if (p.honor) stats[p.name].honors += 1;
+            appState = {
+                users: initialUsers,
+                matches: []
+            };
 
-                        // Cálculo por participante:
-                        // Kills: +1 a cada 15 kills (Math.floor(kills / 15))
-                        // Vitórias: +1 ponto por vitória
-                        // Honra: +1 ponto
-                        let killsPoints = Math.floor((p.kills || 0) / 15);
-                        let honorPoint = p.honor ? 1 : 0;
-                        
-                        let playerMatchPoints = winsCount + killsPoints + honorPoint;
-                        stats[p.name].totalPoints += playerMatchPoints;
-                    }
-                });
-            });
-
-            return Object.values(stats).sort((a, b) => b.totalPoints - a.totalPoints || b.wins - a.wins || b.kills - a.kills);
+            saveStateToFirestore();
         }
 
-        // RENDERIZAÇÃO GERAL DA INTERFACE
-        window.renderAll = function() {
+        function ensureInitialStateStructure() {
+            if (!appState.users) appState.users = {};
+            ALL_MEMBERS.forEach(name => {
+                if (!appState.users[name]) {
+                    appState.users[name] = {
+                        password: null,
+                        role: ALL_ADMS.includes(name) ? "admin" : "player",
+                        monthlyPoints: 0,
+                        annualPoints: 0,
+                        killsTotal: 0,
+                        matchesTotal: 0
+                    };
+                }
+            });
+            if (!appState.matches) appState.matches = [];
+        }
+
+        async function saveStateToFirestore() {
+            try {
+                await setDoc(docRef, appState);
+            } catch (error) {
+                console.error("Error saving state to Firestore:", error);
+                showToast("Erro ao gravar dados no Firestore!", "error");
+            }
+        }
+
+        // --- AUTHENTICATION & LOGIN LOGIC ---
+        window.openLoginModal = function() {
+            document.getElementById('modal-login').classList.remove('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+        };
+
+        window.closeLoginModal = function() {
+            document.getElementById('modal-login').classList.add('hidden');
+        };
+
+        window.handleLoginSubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (!username || !password) {
+                errorDiv.textContent = "Preencha todos os campos!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            const userProfile = appState.users[username];
+
+            if (!userProfile) {
+                errorDiv.textContent = "Usuário não encontrado!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Password registration on first login vs validation
+            if (!userProfile.password) {
+                userProfile.password = password;
+                saveStateToFirestore();
+                showToast(`Senha salva com sucesso para ${username}!`, "success");
+            } else if (userProfile.password !== password) {
+                errorDiv.textContent = "Senha incorreta!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Successful authentication
+            currentUser = {
+                name: username,
+                role: userProfile.role
+            };
+
+            closeLoginModal();
+            renderAuthHeader();
+            renderAdminControls();
+            showToast(`Bem-vindo, ${username}!`, "success");
+        };
+
+        window.logout = function() {
+            currentUser = null;
+            renderAuthHeader();
+            renderAdminControls();
+            showToast("Você saiu da conta.", "info");
+        };
+
+        function renderAuthHeader() {
+            const statusContainer = document.getElementById('user-status-container');
+            const openLoginBtn = document.getElementById('btn-open-login');
+
+            if (currentUser) {
+                statusContainer.classList.remove('hidden');
+                openLoginBtn.classList.add('hidden');
+                document.getElementById('logged-user-name').textContent = currentUser.name;
+                document.getElementById('logged-user-role').textContent = currentUser.role === 'admin' ? 'ADMINISTRADOR' : 'JOGADOR';
+            } else {
+                statusContainer.classList.add('hidden');
+                openLoginBtn.classList.remove('hidden');
+            }
+        }
+
+        function renderAdminControls() {
+            const adminToolbar = document.getElementById('admin-toolbar');
+            if (currentUser && currentUser.role === 'admin') {
+                adminToolbar.classList.remove('hidden');
+            } else {
+                adminToolbar.classList.add('hidden');
+            }
+        }
+
+        // --- MATCH REGISTRATION LOGIC ---
+        window.openMatchModal = function() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast("Apenas administradores podem registrar partidas.", "error");
+                return;
+            }
+            document.getElementById('modal-match').classList.remove('hidden');
+            document.getElementById('match-image-url').value = '';
+            document.getElementById('match-image-base64').value = '';
+            document.getElementById('file-upload-label').textContent = 'Carregar Arquivo Local';
+            renderMatchPlayerForms();
+        };
+
+        window.closeMatchModal = function() {
+            document.getElementById('modal-match').classList.add('hidden');
+        };
+
+        window.handleFileUpload = function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showToast("Tamanho máximo de imagem: 2MB.", "error");
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('match-image-base64').value = e.target.result;
+                    document.getElementById('file-upload-label').textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.renderMatchPlayerForms = function() {
+            const count = parseInt(document.getElementById('match-player-count').value);
+            const container = document.getElementById('match-players-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const defaultName = ALL_MEMBERS[i % ALL_MEMBERS.length];
+                
+                const row = document.createElement('div');
+                row.className = "bg-nord-bg p-4 rounded-xl border border-nord-border space-y-3";
+                row.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="w-full sm:w-1/3">
+                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Jogador ${i + 1}</label>
+                            <select class="player-select w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs font-bold focus:border-nord-cyan focus:outline-none">
+                                ${ALL_MEMBERS.map(m => `<option value="${m}" ${m === defaultName ? 'selected' : ''}>${m}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Kills Registradas</label>
+                            <input type="number" min="0" value="15" class="player-kills w-full bg-nord-card border border-nord-border rounded-lg p-2 text-white text-xs font-bold focus:border-nord-cyan focus:outline-none">
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Resultado da Partida</label>
+                            <select class="player-win w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs focus:border-nord-cyan focus:outline-none">
+                                <option value="true" selected>Vitória (+1 pt)</option>
+                                <option value="false">Derrota (0 pts)</option>
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Ponto de Honra</label>
+                            <select class="player-honor w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs focus:border-nord-cyan focus:outline-none">
+                                <option value="true">Sim (+1 pt)</option>
+                                <option value="false" selected>Não (0 pts)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            }
+        };
+
+        window.handleMatchSubmit = function(e) {
+            e.preventDefault();
+
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast("Apenas administradores podem registrar partidas.", "error");
+                return;
+            }
+
+            const selects = document.querySelectorAll('.player-select');
+            const killsInputs = document.querySelectorAll('.player-kills');
+            const winSelects = document.querySelectorAll('.player-win');
+            const honorSelects = document.querySelectorAll('.player-honor');
+
+            const participants = [];
+            const selectedNames = new Set();
+
+            for (let i = 0; i < selects.length; i++) {
+                const name = selects[i].value;
+                if (selectedNames.has(name)) {
+                    showToast(`O membro ${name} foi selecionado em duplicidade!`, "error");
+                    return;
+                }
+                selectedNames.add(name);
+
+                const kills = parseInt(killsInputs[i].value) || 0;
+                const win = winSelects[i].value === 'true';
+                const honor = honorSelects[i].value === 'true';
+
+                // Explicit Rules Engine Calculation
+                // 1. Victory: +1 pt
+                // 2. Kills: +1 pt per 15 full kills (Math.floor(kills / 15))
+                // 3. Honor: +1 pt
+                const winPts = win ? 1 : 0;
+                const killPts = Math.floor(kills / 15);
+                const honorPts = honor ? 1 : 0;
+                const totalPts = winPts + killPts + honorPts;
+
+                participants.push({
+                    name,
+                    kills,
+                    win,
+                    honor,
+                    pointsAwarded: totalPts
+                });
+            }
+
+            // Mandatory Rule: Minimum 2 NORD players per match
+            if (participants.length < 2) {
+                showToast("A partida precisa conter no mínimo 2 jogadores do time NORD!", "error");
+                return;
+            }
+
+            const imageUrlInput = document.getElementById('match-image-url').value.trim();
+            const imageBase64 = document.getElementById('match-image-base64').value;
+            const proofImage = imageBase64 || imageUrlInput || 'https://placehold.co/600x400/151921/00f0ff?text=CS2+Match+Proof';
+
+            const newMatch = {
+                id: 'match_' + Date.now(),
+                date: new Date().toLocaleString('pt-BR'),
+                registeredBy: currentUser.name,
+                image: proofImage,
+                participants: participants
+            };
+
+            // Update app state & accumulate points for each player
+            appState.matches.unshift(newMatch);
+
+            participants.forEach(p => {
+                if (appState.users[p.name]) {
+                    appState.users[p.name].monthlyPoints = (appState.users[p.name].monthlyPoints || 0) + p.pointsAwarded;
+                    appState.users[p.name].killsTotal = (appState.users[p.name].killsTotal || 0) + p.kills;
+                    appState.users[p.name].matchesTotal = (appState.users[p.name].matchesTotal || 0) + 1;
+                }
+            });
+
+            saveStateToFirestore();
+            closeMatchModal();
+            showToast("Partida lançada e salva no Firestore com sucesso!", "success");
+        };
+
+        // --- RESET MONTH LOGIC ---
+        window.confirmResetMonth = function() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast("Apenas administradores podem resetar o mês.", "error");
+                return;
+            }
+
+            if (confirm("ATENÇÃO: Deseja realmente virar o mês?\n\n- Cada 10 pontos mensais acumulados viram +1 Ponto Anual.\n- A pontuação do Rank Mensal será zerada.")) {
+                executeMonthlyReset();
+            }
+        };
+
+        function executeMonthlyReset() {
+            Object.keys(appState.users).forEach(username => {
+                const user = appState.users[username];
+                const annualGained = Math.floor((user.monthlyPoints || 0) / 10);
+                user.annualPoints = (user.annualPoints || 0) + annualGained;
+                user.monthlyPoints = 0; // Reset monthly points
+            });
+
+            saveStateToFirestore();
+            showToast("Virada de mês concluída! Pontuação convertida para o Rank Anual.", "success");
+        }
+
+        // --- UI RENDERING ENGINE ---
+        function renderAllUI() {
+            renderAuthHeader();
+            renderAdminControls();
             renderMonthlyRank();
             renderAnnualRank();
             renderMatchHistory();
         }
 
-        // RENDER TABELA MENSAL
+        // 1. Render Monthly Leaderboard Cards
         function renderMonthlyRank() {
-            const list = calculateMonthlyStats();
-            const tbody = document.getElementById('table-mensal-body');
-            tbody.innerHTML = '';
-
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-500">Nenhuma pontuação registrada neste mês.</td></tr>`;
-                return;
-            }
-
-            list.forEach((player, index) => {
-                const pos = index + 1;
-                let posBadge = `<span class="font-bold text-gray-400">${pos}º</span>`;
-                if (pos === 1) posBadge = `<span class="w-6 h-6 rounded-full bg-yellow-500 text-black font-extrabold flex items-center justify-center text-xs mx-auto shadow-md shadow-yellow-500/20">1</span>`;
-                if (pos === 2) posBadge = `<span class="w-6 h-6 rounded-full bg-slate-300 text-black font-extrabold flex items-center justify-center text-xs mx-auto">2</span>`;
-                if (pos === 3) posBadge = `<span class="w-6 h-6 rounded-full bg-amber-700 text-white font-extrabold flex items-center justify-center text-xs mx-auto">3</span>`;
-
-                const annualEstimate = Math.floor(player.totalPoints / 10);
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-nord-base/40 transition-colors';
-                tr.innerHTML = `
-                    <td class="py-3 px-4 text-center font-mono">${posBadge}</td>
-                    <td class="py-3 px-4 font-semibold text-white flex items-center gap-2">
-                        ${player.name}
-                        ${player.isAdmin ? '<span class="text-[10px] bg-nord-accent/20 text-nord-accent border border-nord-accent/30 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
-                    </td>
-                    <td class="py-3 px-4 text-center text-xs text-gray-400">${player.isAdmin ? 'Admin/Player' : 'Jogador'}</td>
-                    <td class="py-3 px-4 text-center font-mono text-emerald-400 font-bold">${player.wins}</td>
-                    <td class="py-3 px-4 text-center font-mono">${player.kills}</td>
-                    <td class="py-3 px-4 text-center font-mono text-amber-400">${player.honors}</td>
-                    <td class="py-3 px-4 text-center font-mono text-nord-blue font-semibold">+${annualEstimate} pts</td>
-                    <td class="py-3 px-4 text-right font-orbitron font-bold text-base text-nord-accent">${player.totalPoints} pts</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // RENDER TABELA ANUAL (TOP 5)
-        function renderAnnualRank() {
-            let annualList = PLAYERS_LIST.map(p => {
-                return {
-                    name: p.name,
-                    isAdmin: p.isAdmin,
-                    points: window.appData.annualPoints[p.name] || 0
-                }
-            }).sort((a, b) => b.points - a.points);
-
-            const top5 = annualList.slice(0, 5);
-
-            // Podio UI
-            const podiumContainer = document.getElementById('podium-container');
-            podiumContainer.innerHTML = '';
-
-            const p1 = top5[0] || { name: '-', points: 0 };
-            const p2 = top5[1] || { name: '-', points: 0 };
-            const p3 = top5[2] || { name: '-', points: 0 };
-
-            podiumContainer.innerHTML = `
-                <!-- 2º LUGAR -->
-                <div class="bg-nord-base/60 border border-nord-border rounded-xl p-4 text-center flex flex-col items-center justify-end order-2 md:order-1 h-44">
-                    <div class="w-10 h-10 rounded-full bg-slate-400 text-black font-bold flex items-center justify-center text-lg mb-2 shadow-lg">2</div>
-                    <div class="font-bold text-white text-sm truncate w-full">${p2.name}</div>
-                    <div class="font-orbitron text-xl font-extrabold text-slate-300 mt-1">${p2.points} <span class="text-xs font-normal">pts</span></div>
-                </div>
-                <!-- 1º LUGAR -->
-                <div class="bg-gradient-to-b from-amber-500/20 to-nord-base border border-amber-500/50 rounded-xl p-4 text-center flex flex-col items-center justify-end order-1 md:order-2 h-52 relative overflow-hidden shadow-xl">
-                    <i class="fa-solid fa-crown text-amber-400 text-2xl mb-1 animate-pulse"></i>
-                    <div class="w-12 h-12 rounded-full bg-amber-400 text-black font-extrabold flex items-center justify-center text-xl mb-2 shadow-lg shadow-amber-500/30">1</div>
-                    <div class="font-bold text-white text-base truncate w-full">${p1.name}</div>
-                    <div class="font-orbitron text-2xl font-black text-amber-400 mt-1">${p1.points} <span class="text-xs font-normal">pts</span></div>
-                </div>
-                <!-- 3º LUGAR -->
-                <div class="bg-nord-base/60 border border-nord-border rounded-xl p-4 text-center flex flex-col items-center justify-end order-3 md:order-3 h-40">
-                    <div class="w-9 h-9 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center text-base mb-2 shadow-lg">3</div>
-                    <div class="font-bold text-white text-sm truncate w-full">${p3.name}</div>
-                    <div class="font-orbitron text-lg font-extrabold text-amber-600 mt-1">${p3.points} <span class="text-xs font-normal">pts</span></div>
-                </div>
-            `;
-
-            // Tabela Top 5
-            const tbody = document.getElementById('table-anual-body');
-            tbody.innerHTML = '';
-
-            top5.forEach((player, index) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-nord-base/40 transition-colors';
-                tr.innerHTML = `
-                    <td class="py-3 px-4 text-center font-orbitron font-bold text-nord-accent">#${index + 1}</td>
-                    <td class="py-3 px-4 font-semibold text-white flex items-center gap-2">
-                        ${player.name}
-                        ${player.isAdmin ? '<span class="text-[10px] bg-nord-accent/20 text-nord-accent border border-nord-accent/30 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
-                    </td>
-                    <td class="py-3 px-4 text-center text-xs text-gray-400 font-mono">${player.points * 10} pts mensais acumulados</td>
-                    <td class="py-3 px-4 text-right font-orbitron font-bold text-lg text-amber-400">${player.points} pts</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // RENDER HISTÓRICO DE PARTIDAS
-        function renderMatchHistory() {
-            const container = document.getElementById('match-history-list');
+            const container = document.getElementById('monthly-rank-list');
             container.innerHTML = '';
 
-            if (!window.appData.matches || window.appData.matches.length === 0) {
-                container.innerHTML = `<div class="text-center py-8 text-gray-500">Nenhuma partida registrada neste mês.</div>`;
-                return;
-            }
+            const sortedPlayers = Object.entries(appState.users)
+                .map(([name, data]) => ({ name, ...data }))
+                .sort((a, b) => (b.monthlyPoints || 0) - (a.monthlyPoints || 0));
 
-            const reversed = [...window.appData.matches].reverse();
+            sortedPlayers.forEach((player, index) => {
+                const rankPos = index + 1;
+                let badgeStyle = "bg-nord-card border-nord-border text-gray-400";
+                if (rankPos === 1) badgeStyle = "bg-nord-gold/20 border-nord-gold/60 text-nord-gold glow-gold";
+                else if (rankPos === 2) badgeStyle = "bg-nord-silver/20 border-nord-silver/60 text-nord-silver";
+                else if (rankPos === 3) badgeStyle = "bg-nord-bronze/20 border-nord-bronze/60 text-nord-bronze";
 
-            reversed.forEach((m) => {
                 const card = document.createElement('div');
-                card.className = "bg-nord-base p-4 rounded-lg border border-nord-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-lg";
-                
-                let playersHtml = (m.players || []).map(p => {
-                    let winsCount = parseInt(p.wins || 1);
-                    let kills = parseInt(p.kills || 0);
-                    let pts = winsCount + Math.floor(kills / 15) + (p.honor ? 1 : 0);
-                    return `<div class="bg-nord-card border border-nord-border px-3 py-1.5 rounded text-xs flex flex-wrap items-center gap-2">
-                        <span class="font-bold text-white">${p.name}</span>
-                        <span class="text-gray-400">Vitórias: <strong class="text-emerald-400">${winsCount}</strong></span>
-                        <span class="text-gray-400">Kills: <strong class="text-white">${kills}</strong></span>
-                        ${p.honor ? '<span class="text-amber-400 font-semibold" title="Recebeu Honra"><i class="fa-solid fa-medal"></i> Honra</span>' : ''}
-                        <span class="text-nord-accent font-bold font-mono text-sm ml-auto">+${pts}pt</span>
-                    </div>`;
-                }).join('');
-
-                const photoSection = m.photo ? `
-                    <div class="mt-3 md:mt-0 flex-shrink-0">
-                        <a href="${m.photo}" target="_blank" title="Clique para ampliar a imagem">
-                            <img src="${m.photo}" alt="Comprovante da partida" class="w-full md:w-36 h-24 object-cover rounded border border-nord-border hover:opacity-80 transition">
-                        </a>
-                    </div>
-                ` : '';
-
+                card.className = "bg-nord-card border border-nord-border rounded-2xl p-5 relative overflow-hidden transition-all hover:border-nord-cyan/50 hover:shadow-xl group";
                 card.innerHTML = `
-                    <div class="space-y-2 flex-grow">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] px-2 py-0.5 rounded font-bold uppercase">PARTIDA REGISTRADA</span>
-                            <span class="text-xs font-mono text-gray-400">${m.date}</span>
-                            ${m.map ? `<span class="text-xs bg-nord-border px-2 py-0.5 rounded text-gray-300 font-mono">${m.map}</span>` : ''}
-                        </div>
-                        <div class="text-xs text-gray-400">Jogadores em Partida (${m.players ? m.players.length : 0}):</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-1">
-                            ${playersHtml}
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl font-black text-sm flex items-center justify-center border font-display ${badgeStyle}">
+                                #${rankPos}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-base group-hover:text-nord-cyan transition-colors flex items-center gap-2 font-display">
+                                    ${player.name}
+                                    ${player.role === 'admin' ? '<i class="fa-solid fa-shield-cat text-xs text-nord-orange" title="Administrador"></i>' : ''}
+                                </h3>
+                                <span class="text-xs font-mono text-gray-400">${player.matchesTotal || 0} partidas no total</span>
+                            </div>
                         </div>
                     </div>
-                    ${photoSection}
+
+                    <div class="grid grid-cols-2 gap-3 bg-nord-bg/70 p-3 rounded-xl border border-nord-border/60 text-center">
+                        <div>
+                            <span class="block text-[10px] font-mono text-gray-400 uppercase">Pontos Mensais</span>
+                            <span class="text-2xl font-black text-nord-cyan font-mono">${player.monthlyPoints || 0} <span class="text-xs text-gray-400">pts</span></span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-mono text-gray-400 uppercase">Total Kills</span>
+                            <span class="text-2xl font-black text-nord-orange font-mono">${player.killsTotal || 0}</span>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // MODAL DE REGISTRAR PARTIDA E ABAS DINÂMICAS DOS JOGADORES
-        function openMatchModal() {
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Apenas administradores podem registrar partidas!", "error");
-                return;
-            }
+        // 2. Render Annual Rank Podium & TOP 5
+        function renderAnnualRank() {
+            const podiumContainer = document.getElementById('annual-podium');
+            const restContainer = document.getElementById('annual-rest-list');
+            podiumContainer.innerHTML = '';
+            restContainer.innerHTML = '';
 
-            document.getElementById('match-photo-url').value = '';
-            document.getElementById('match-photo-file').value = '';
-            document.getElementById('photo-preview-container').classList.add('hidden');
-            currentPhotoBase64 = "";
+            // Strictly filter and sort top 5
+            const sortedAnnual = Object.entries(appState.users)
+                .map(([name, data]) => ({ name, ...data }))
+                .sort((a, b) => (b.annualPoints || 0) - (a.annualPoints || 0))
+                .slice(0, 5);
 
-            renderMatchPlayerTabs();
-            document.getElementById('modal-match').classList.remove('hidden');
-        }
+            if (sortedAnnual.length === 0) return;
 
-        function closeMatchModal() {
-            document.getElementById('modal-match').classList.add('hidden');
-        }
+            const first = sortedAnnual[0];
+            const second = sortedAnnual[1];
+            const third = sortedAnnual[2];
+            const fourth = sortedAnnual[3];
+            const fifth = sortedAnnual[4];
 
-        function previewPhotoInput() {
-            const url = document.getElementById('match-photo-url').value.trim();
-            const previewContainer = document.getElementById('photo-preview-container');
-            const previewImg = document.getElementById('photo-preview');
-            
-            if (url) {
-                previewImg.src = url;
-                previewContainer.classList.remove('hidden');
-                currentPhotoBase64 = url;
-            } else {
-                previewContainer.classList.add('hidden');
-                currentPhotoBase64 = "";
-            }
-        }
+            const renderPodiumBlock = (player, rank, heightClass, colorClass, borderClass, icon) => {
+                if (!player) return '';
+                return `
+                    <div class="flex-1 w-full flex flex-col items-center">
+                        <div class="mb-3 text-center">
+                            <div class="w-14 h-14 mx-auto rounded-2xl ${colorClass}/20 border ${borderClass} flex items-center justify-center text-2xl text-white mb-1 shadow-lg">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                            <div class="font-black text-white text-sm sm:text-base font-display">${player.name}</div>
+                            <div class="text-xs font-mono text-nord-cyan font-bold">${player.annualPoints || 0} Pts Anuais</div>
+                        </div>
 
-        function handlePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentPhotoBase64 = e.target.result;
-                    const previewContainer = document.getElementById('photo-preview-container');
-                    const previewImg = document.getElementById('photo-preview');
-                    previewImg.src = currentPhotoBase64;
-                    previewContainer.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function renderMatchPlayerTabs() {
-            const count = parseInt(document.getElementById('match-player-count').value);
-            
-            // Inicializar array de players ativos se necessário
-            if (!activeMatchPlayers || activeMatchPlayers.length !== count) {
-                activeMatchPlayers = [];
-                for(let i = 0; i < count; i++) {
-                    activeMatchPlayers.push({
-                        name: PLAYERS_LIST[i % PLAYERS_LIST.length].name,
-                        kills: 0,
-                        wins: 1,
-                        honor: false
-                    });
-                }
-            }
-            activeMatchTab = 0;
-
-            buildTabsUI();
-        }
-
-        function buildTabsUI() {
-            const headersContainer = document.getElementById('match-tabs-header');
-            const bodyContainer = document.getElementById('match-tabs-body');
-            
-            headersContainer.innerHTML = '';
-            bodyContainer.innerHTML = '';
-
-            activeMatchPlayers.forEach((playerData, idx) => {
-                // Header Tab
-                const tabBtn = document.createElement('button');
-                tabBtn.type = 'button';
-                tabBtn.onclick = () => { activeMatchTab = idx; buildTabsUI(); };
-                
-                const isSelected = activeMatchTab === idx;
-                tabBtn.className = `px-3 py-1.5 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 transition ${isSelected ? 'bg-nord-accent text-black font-bold' : 'bg-nord-base text-gray-400 hover:text-white border border-nord-border'}`;
-                tabBtn.innerHTML = `<i class="fa-solid fa-user"></i> Jogador ${idx + 1}: ${playerData.name}`;
-                headersContainer.appendChild(tabBtn);
-            });
-
-            // Active Tab Content
-            const pData = activeMatchPlayers[activeMatchTab];
-            const activeContent = document.createElement('div');
-            activeContent.className = "bg-nord-base p-4 rounded-b-lg border border-nord-border space-y-4 animate-fade-in";
-            
-            // Gerar opções de seleção de jogador
-            let optionsHtml = PLAYERS_LIST.map(p => {
-                return `<option value="${p.name}" ${p.name === pData.name ? 'selected' : ''}>${p.name} ${p.isAdmin ? '(ADM)' : ''}</option>`;
-            }).join('');
-
-            activeContent.innerHTML = `
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Nome do Jogador ${activeMatchTab + 1}</label>
-                        <select onchange="updateActivePlayerData('name', this.value)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
-                            ${optionsHtml}
-                        </select>
+                        <div class="w-full ${heightClass} ${colorClass}/10 border-t-4 ${borderClass} bg-gradient-to-b from-nord-card to-nord-bg rounded-t-2xl p-4 flex flex-col items-center justify-between shadow-2xl">
+                            <span class="text-3xl font-black ${colorClass.replace('bg-', 'text-')} font-display">#${rank}</span>
+                        </div>
                     </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Quantidade de Kills</label>
-                        <input type="number" min="0" value="${pData.kills}" onchange="updateActivePlayerData('kills', parseInt(this.value) || 0)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
-                        <span class="text-[10px] text-gray-400 mt-0.5 block">+1 ponto a cada 15 kills</span>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Vitórias Nesta Partida</label>
-                        <input type="number" min="1" value="${pData.wins}" onchange="updateActivePlayerData('wins', parseInt(this.value) || 1)" class="w-full bg-nord-card border border-nord-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nord-accent">
-                        <span class="text-[10px] text-gray-400 mt-0.5 block">+1 ponto por vitória</span>
-                    </div>
-
-                    <div class="flex items-center pt-4">
-                        <label class="flex items-center gap-2 cursor-pointer bg-nord-card p-2.5 rounded border border-nord-border w-full">
-                            <input type="checkbox" ${pData.honor ? 'checked' : ''} onchange="updateActivePlayerData('honor', this.checked)" class="w-4 h-4 rounded text-amber-400 bg-nord-base border-nord-border">
-                            <span class="text-xs font-semibold text-amber-400 flex items-center gap-1">
-                                <i class="fa-solid fa-medal"></i> Ganhou Ponto de Honra (+1pt)
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            `;
-            bodyContainer.appendChild(activeContent);
-        }
-
-        function updateActivePlayerData(field, val) {
-            activeMatchPlayers[activeMatchTab][field] = val;
-            if(field === 'name') buildTabsUI();
-        }
-
-        async function handleSaveMatch(e) {
-            e.preventDefault();
-
-            // Validação de nomes duplicados na mesma partida
-            const names = activeMatchPlayers.map(p => p.name);
-            const hasDuplicates = new Set(names).size !== names.length;
-            if (hasDuplicates) {
-                showToast("Não é possível registrar o mesmo jogador mais de uma vez na partida!", "warning");
-                return;
-            }
-
-            if (activeMatchPlayers.length < 2) {
-                showToast("É necessário no mínimo 2 jogadores da NORD por partida!", "warning");
-                return;
-            }
-
-            const map = document.getElementById('match-map').value.trim();
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            const matchId = `match_${Date.now()}`;
-            const matchData = {
-                date: dateStr,
-                timestamp: Date.now(),
-                map: map,
-                photo: currentPhotoBase64,
-                players: activeMatchPlayers
+                `;
             };
 
-            // Salvar no Firebase
-            if (window.FB_DB) {
-                try {
-                    await setDoc(window.getPublicDocRef('matches', matchId), matchData);
-                    showToast("Partida registrada e salva com sucesso no banco de dados!", "success");
-                } catch(err) {
-                    console.error("Erro ao salvar partida no Firebase:", err);
-                    // Adiciona na memória local como fallback
-                    window.appData.matches.push({ id: matchId, ...matchData });
-                    window.renderAll();
-                    showToast("Partida registrada localmente.", "warning");
-                }
-            } else {
-                window.appData.matches.push({ id: matchId, ...matchData });
-                window.renderAll();
-                showToast("Partida registrada!", "success");
-            }
+            let podiumHTML = '';
+            if (second) podiumHTML += renderPodiumBlock(second, 2, 'h-40', 'bg-nord-silver', 'border-nord-silver', 'fa-award');
+            if (first) podiumHTML += renderPodiumBlock(first, 1, 'h-52', 'bg-nord-gold', 'border-nord-gold', 'fa-crown');
+            if (third) podiumHTML += renderPodiumBlock(third, 3, 'h-32', 'bg-nord-bronze', 'border-nord-bronze', 'fa-medal');
 
-            closeMatchModal();
+            podiumContainer.innerHTML = podiumHTML;
+
+            // Render 4th and 5th position
+            [fourth, fifth].forEach((player, idx) => {
+                if (!player) return;
+                const pos = idx + 4;
+                const row = document.createElement('div');
+                row.className = "bg-nord-card border border-nord-border p-4 rounded-xl flex items-center justify-between shadow-md";
+                row.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="w-8 h-8 rounded-lg bg-nord-bg border border-nord-border flex items-center justify-center font-display font-bold text-gray-400 text-xs">#${pos}</span>
+                        <div>
+                            <div class="font-bold text-white text-sm font-display">${player.name}</div>
+                            <div class="text-xs text-gray-400 font-mono">${player.matchesTotal || 0} partidas registradas</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-lg font-black text-nord-cyan font-mono">${player.annualPoints || 0}</span>
+                        <span class="text-xs text-gray-400 block font-mono">pts anuais</span>
+                    </div>
+                `;
+                restContainer.appendChild(row);
+            });
         }
 
-        // RESETAR MÊS E ACUMULAR ANUAL NO FIREBASE
-        async function confirmResetMonth() {
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Apenas administradores podem fechar o mês!", "error");
+        // 3. Render Match History List
+        function renderMatchHistory() {
+            const container = document.getElementById('match-history-list');
+            container.innerHTML = '';
+
+            if (!appState.matches || appState.matches.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-nord-card/50 rounded-2xl border border-nord-border/50">
+                        <i class="fa-solid fa-gamepad text-4xl text-gray-600 mb-3 block"></i>
+                        <p class="text-gray-400 font-medium text-sm">Nenhuma partida salva no histórico.</p>
+                    </div>
+                `;
                 return;
             }
 
-            if (confirm("Tem certeza que deseja fechar o mês atual?\n\n- Cada 10 pontos do mês viram 1 ponto no Rank Anual.\n- O histórico do mês será arquivado para o próximo período.")) {
-                
-                const monthlyStats = calculateMonthlyStats();
+            appState.matches.forEach(match => {
+                const card = document.createElement('div');
+                card.className = "bg-nord-card border border-nord-border rounded-2xl overflow-hidden shadow-xl transition-all hover:border-nord-border/80";
+                card.innerHTML = `
+                    <div class="p-5 flex flex-col lg:flex-row gap-6">
+                        <!-- Screenshot Preview Button -->
+                        <div class="w-full lg:w-64 h-40 rounded-xl overflow-hidden bg-nord-bg border border-nord-border relative flex-shrink-0 group cursor-pointer" onclick="openImagePreview('${match.image}')">
+                            <img src="${match.image}" alt="Comprovante CS2" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/600x400/151921/00f0ff?text=Comprovante+CS2'">
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-nord-cyan font-bold text-xs gap-2 transition-opacity font-display">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> Ver Comprovante
+                            </div>
+                        </div>
 
-                for (const p of monthlyStats) {
-                    const tens = Math.floor(p.totalPoints / 10);
-                    if (tens > 0) {
-                        const currentAnnual = window.appData.annualPoints[p.name] || 0;
-                        const newAnnual = currentAnnual + tens;
-                        window.appData.annualPoints[p.name] = newAnnual;
+                        <!-- Match Details -->
+                        <div class="flex-grow space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-nord-border/60 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-mono bg-nord-cyan/10 text-nord-cyan border border-nord-cyan/30 px-2.5 py-1 rounded-md font-bold">
+                                        <i class="fa-solid fa-calendar-day mr-1"></i> ${match.date}
+                                    </span>
+                                    <span class="text-xs text-gray-400 font-mono">
+                                        ADM: <strong class="text-gray-200">${match.registeredBy}</strong>
+                                    </span>
+                                </div>
+                                <span class="text-xs font-mono text-nord-orange font-bold">
+                                    <i class="fa-solid fa-users mr-1"></i> ${match.participants.length} Jogadores NORD
+                                </span>
+                            </div>
 
-                        if (window.FB_DB) {
-                            try {
-                                await setDoc(window.getPublicDocRef('annual', p.name), { points: newAnnual });
-                            } catch(err) {
-                                console.error("Erro ao atualizar rank anual:", err);
-                            }
-                        }
-                    }
-                }
-
-                // Limpar partidas no Firebase do mês encerrado
-                if (window.FB_DB) {
-                    const matchesToDelete = [...window.appData.matches];
-                    for (const m of matchesToDelete) {
-                        try {
-                            if (m.id) {
-                                const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                                await deleteDoc(window.getPublicDocRef('matches', m.id));
-                            }
-                        } catch(e){
-                            console.error("Erro ao deletar partida no reset:", e);
-                        }
-                    }
-                }
-                window.appData.matches = [];
-                window.renderAll();
-
-                showToast("Mês encerrado com sucesso! Os pontos foram acumulados no Rank Anual.", "success");
-            }
+                            <!-- Participants Roster -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                ${match.participants.map(p => `
+                                    <div class="bg-nord-bg/70 border border-nord-border p-3 rounded-xl flex items-center justify-between">
+                                        <div>
+                                            <div class="font-bold text-xs text-white font-display">${p.name}</div>
+                                            <div class="text-[11px] text-gray-400 flex items-center gap-2 mt-0.5 font-mono">
+                                                <span>${p.kills} Kills</span>
+                                                <span>&bull;</span>
+                                                <span class="${p.win ? 'text-green-400 font-bold' : 'text-red-400'}">${p.win ? 'Vitória' : 'Derrota'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-sm font-black text-nord-cyan font-mono">+${p.pointsAwarded}</span>
+                                            <span class="text-[10px] text-gray-400 block font-mono">pts</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
+
+        // --- IMAGE PREVIEW MODAL ---
+        window.openImagePreview = function(url) {
+            document.getElementById('preview-modal-img').src = url;
+            document.getElementById('modal-image-preview').classList.remove('hidden');
+        };
+
+        window.closeImagePreviewModal = function() {
+            document.getElementById('modal-image-preview').classList.add('hidden');
+        };
+
+        // --- NAVIGATION CONTROLLER ---
+        window.switchTab = function(tabName) {
+            document.getElementById('tab-monthly').classList.add('hidden');
+            document.getElementById('tab-annual').classList.add('hidden');
+            document.getElementById('tab-matches').classList.add('hidden');
+
+            document.getElementById('nav-monthly').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
+            document.getElementById('nav-annual').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
+            document.getElementById('nav-matches').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
+
+            if (tabName === 'monthly') {
+                document.getElementById('tab-monthly').classList.remove('hidden');
+                document.getElementById('nav-monthly').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-cyan text-black shadow-md font-display tracking-wide";
+            } else if (tabName === 'annual') {
+                document.getElementById('tab-annual').classList.remove('hidden');
+                document.getElementById('nav-annual').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-orange text-white shadow-md font-display tracking-wide";
+            } else if (tabName === 'matches') {
+                document.getElementById('tab-matches').classList.remove('hidden');
+                document.getElementById('nav-matches').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-border text-white shadow-md font-display tracking-wide";
+            }
+        };
+
+        window.toggleMobileMenu = function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        };
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = "info") {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let typeStyles = "bg-nord-card border-nord-cyan text-white";
+            if (type === "success") typeStyles = "bg-nord-card border-green-500 text-green-400";
+            if (type === "error") typeStyles = "bg-nord-card border-red-500 text-red-400";
+
+            toast.className = `p-4 rounded-xl border-l-4 shadow-2xl text-xs font-bold transition-all transform duration-300 pointer-events-auto flex items-center gap-3 ${typeStyles}`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
     </script>
 </body>
 </html>
