@@ -830,19 +830,30 @@
             const participantes = [];
             const isVitoria = resultado === 'Vitoria';
 
+            // Atualiza estatísticas de TODOS os jogadores selecionados no Firestore
             for (const chk of checkboxes) {
                 const name = chk.value;
                 const killsInput = document.getElementById(`kills-${name.replace(/\s+/g, '-')}`);
                 const kills = parseInt(killsInput.value, 10) || 0;
                 participantes.push({ name, kills });
 
-                const stats = window.appState.playersStats[name] || { mensalPts: 0, totalKills: 0, totalWins: 0, anualPts: 0, cards: ['G','G','G','G','G'] };
+                const stats = window.appState.playersStats[name] || { 
+                    mensalPts: 0, 
+                    totalKills: 0, 
+                    totalWins: 0, 
+                    anualPts: 0, 
+                    totalHonors: 0,
+                    cards: ['G','G','G','G','G'] 
+                };
+                
+                // Soma as kills e vitórias para CADA integrante marcado na partida
                 stats.totalKills = (stats.totalKills || 0) + kills;
                 if (isVitoria) {
                     stats.totalWins = (stats.totalWins || 0) + 1;
                     stats.mensalPts = (stats.mensalPts || 0) + 3;
                 }
 
+                // Salva a atualização individual de cada jogador no banco
                 const playerDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', name);
                 await setDoc(playerDocRef, stats, { merge: true });
             }
@@ -858,7 +869,7 @@
 
             try {
                 await addDoc(partidasCollectionRef, novaPartidaData);
-                window.showToast('Partida registrada com sucesso no Firebase!', 'success');
+                window.showToast('Partida e estatísticas dos membros registradas no Firebase!', 'success');
                 closeModalRegistrarPartida();
             } catch (err) {
                 console.error("Erro ao registrar partida:", err);
