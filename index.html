@@ -479,6 +479,154 @@
 
         let selectedLoginUser = null;
 
+        // EXPONDO FUNÇÕES AO ESCOPO GLOBAL PARA FUNCIONAR COM ONCLICK NO HTML
+        window.avancarLogin = function() {
+            const userSelect = document.getElementById('select-user-login').value;
+            if (!userSelect) {
+                window.showToast('Selecione um jogador para continuar.', 'warning');
+                return;
+            }
+            selectedLoginUser = userSelect;
+            document.getElementById('target-user-name').innerText = selectedLoginUser;
+
+            document.getElementById('login-step-select').classList.add('hidden');
+            document.getElementById('login-step-password').classList.remove('hidden');
+
+            const hasPassword = window.appState.passwords[selectedLoginUser];
+            const notice = document.getElementById('first-login-notice');
+            const labelInput = document.getElementById('label-password-input');
+
+            if (!hasPassword) {
+                notice.classList.remove('hidden');
+                labelInput.innerText = "Crie sua Senha";
+            } else {
+                notice.classList.add('hidden');
+                labelInput.innerText = "Digite sua Senha";
+            }
+        };
+
+        window.voltarStepLogin = function() {
+            document.getElementById('login-step-password').classList.add('hidden');
+            document.getElementById('login-step-select').classList.remove('hidden');
+            document.getElementById('input-password').value = '';
+        };
+
+        window.efetuarLogin = async function() {
+            const passInput = document.getElementById('input-password').value.trim();
+            if (!passInput) {
+                window.showToast('Digite uma senha válida.', 'warning');
+                return;
+            }
+
+            const storedPass = window.appState.passwords[selectedLoginUser];
+
+            if (!storedPass) {
+                // Primeira senha criada
+                window.appState.passwords[selectedLoginUser] = passInput;
+                window.appState.currentUser = selectedLoginUser;
+                try {
+                    await setDoc(passwordsDocRef, window.appState.passwords, { merge: true });
+                    window.showToast(`Senha criada no Firebase! Bem-vindo, ${selectedLoginUser}.`, 'success');
+                    finishLogin();
+                } catch (e) {
+                    console.error("Erro ao salvar senha:", e);
+                    window.showToast('Erro ao salvar senha no Firebase.', 'error');
+                }
+            } else {
+                // Validação de senha existente
+                if (storedPass === passInput) {
+                    window.appState.currentUser = selectedLoginUser;
+                    window.showToast(`Bem-vindo de volta, ${selectedLoginUser}!`, 'success');
+                    finishLogin();
+                } else {
+                    window.showToast('Senha incorreta!', 'error');
+                }
+            }
+        };
+
+        function finishLogin() {
+            document.getElementById('modal-login').classList.add('hidden');
+            document.getElementById('input-password').value = '';
+            checkSession();
+        }
+
+        window.logout = function() {
+            window.appState.currentUser = null;
+            checkSession();
+            document.getElementById('modal-login').classList.remove('hidden');
+            window.voltarStepLogin();
+            window.showToast('Você saiu da sua conta.', 'info');
+        };
+
+        function checkSession() {
+            const navUserArea = document.getElementById('nav-user-area');
+            const adminActionsNav = document.getElementById('admin-actions-nav');
+
+            if (window.appState.currentUser) {
+                const userObj = window.PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
+                const isAdmin = userObj && userObj.role === 'ADM';
+
+                navUserArea.innerHTML = `
+                    <div class="flex items-center space-x-3 bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-800">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold font-teko text-lg text-white">
+                            ${window.appState.currentUser.charAt(0)}
+                        </div>
+                        <div class="text-left">
+                            <span class="block text-xs font-bold text-white leading-tight">${window.appState.currentUser}</span>
+                            <span class="text-[10px] text-gray-400 ${isAdmin ? 'text-blue-400 font-semibold' : ''}">${userObj ? userObj.role : 'MEMBRO'}</span>
+                        </div>
+                        <button onclick="logout()" title="Sair" class="text-gray-500 hover:text-rose-400 ml-2 transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                `;
+
+                if (isAdmin) {
+                    adminActionsNav.classList.remove('hidden');
+                } else {
+                    adminActionsNav.classList.add('hidden');
+                }
+            } else {
+                document.getElementById('modal-login').classList.remove('hidden');
+            }
+        }
+
+        window.switchTab = function(tab) {
+            const viewRanking = document.getElementById('view-ranking');
+            const viewPartidas = document.getElementById('view-partidas');
+            const btnRanking = document.getElementById('tab-btn-ranking');
+            const btnPartidas = document.getElementById('tab-btn-partidas');
+
+            if (tab === 'ranking') {
+                viewRanking.classList.remove('hidden');
+                viewPartidas.classList.add('hidden');
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            } else {
+                viewRanking.classList.add('hidden');
+                viewPartidas.classList.remove('hidden');
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            }
+        };
+
+        window.showToast = function(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+            if (type === 'error') toastIcon.className = "fa-solid fa-circle-exclamation text-rose-500";
+            else if (type === 'success') toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            else if (type === 'warning') toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            else toastIcon.className = "fa-solid fa-circle-info text-blue-400";
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        };
+
         // INICIALIZAÇÃO E TRATAMENTO DE AUTENTICAÇÃO COM FALLBACK
         try {
             await signInAnonymously(auth);
@@ -486,7 +634,6 @@
             initRealtimeListeners();
         } catch (err) {
             console.warn("Autenticação Anônima não permitida no console. Iniciando conexões diretas ao Firestore:", err.message);
-            // Inicia os listeners mesmo se o signInAnonymously falhar/estiver desativado
             initRealtimeListeners();
         }
 
