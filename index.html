@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time NORD - CS2 Competitive Ranking</title>
-    <!-- Tailwind CSS -->
+    <title>NORD CS2 - Ranking & Stats</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,1008 +13,924 @@
                 extend: {
                     colors: {
                         nord: {
-                            bg: '#0b0e14',
+                            dark: '#0B0E14',
                             card: '#151921',
-                            cardLight: '#1e2430',
-                            border: '#2a3245',
-                            cyan: '#00f0ff',
-                            orange: '#ff5500',
-                            gold: '#ffd700',
-                            silver: '#c0c0c0',
-                            bronze: '#cd7f32'
+                            accent: '#3B82F6',
+                            gold: '#F59E0B',
+                            silver: '#9CA3AF',
+                            bronze: '#D97706',
+                            red: '#EF4444'
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Orbitron', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome para Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #0b0e14;
-            color: #e2e8f0;
-            background-image: 
-                radial-gradient(circle at 10% 10%, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
-                radial-gradient(circle at 90% 90%, rgba(255, 85, 0, 0.05) 0%, transparent 45%);
-            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0E14;
+            color: #F3F4F6;
         }
-        .font-display { font-family: 'Orbitron', sans-serif; }
-        .glow-cyan { box-shadow: 0 0 20px rgba(0, 240, 255, 0.25); }
-        .glow-orange { box-shadow: 0 0 20px rgba(255, 85, 0, 0.25); }
-        .glow-gold { box-shadow: 0 0 25px rgba(255, 215, 0, 0.3); }
-        
+        .font-teko {
+            font-family: 'Teko', sans-serif;
+        }
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0b0e14; }
-        ::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0E14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-nord-cyan selection:text-black">
+<body class="min-h-screen flex flex-col justify-between selection:bg-nord-accent selection:text-white">
 
-    <!-- Header Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-nord-bg/95 backdrop-blur-md border-b border-nord-border">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
-                
-                <!-- Brand Logo / Title -->
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('monthly')">
-                    <div class="w-12 h-12 bg-gradient-to-br from-nord-cyan via-nord-orange to-amber-500 rounded-xl flex items-center justify-center font-black text-black text-2xl shadow-lg transform -rotate-3 font-display">
-                        N
-                    </div>
-                    <div>
-                        <span class="text-2xl font-black tracking-wider uppercase text-white flex items-center gap-2 font-display">
-                            TIME <span class="text-nord-cyan">NORD</span>
-                            <span class="text-xs px-2 py-0.5 rounded bg-nord-orange/20 text-nord-orange border border-nord-orange/40 font-mono">CS2 RANK</span>
-                        </span>
-                        <p class="text-xs text-gray-400 font-medium tracking-widest uppercase">Competitive Leaderboard</p>
-                    </div>
+    <!-- TOP NAV -->
+    <header class="bg-nord-card/80 backdrop-blur border-b border-gray-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('ranking')">
+                <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center font-teko text-3xl font-bold tracking-wider shadow-lg shadow-blue-500/20 text-white">
+                    N
                 </div>
-
-                <!-- Navigation Tabs (Desktop) -->
-                <nav class="hidden md:flex space-x-2 bg-nord-card p-1.5 rounded-xl border border-nord-border">
-                    <button id="nav-monthly" onclick="switchTab('monthly')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-cyan text-black shadow-md font-display tracking-wide">
-                        <i class="fa-solid fa-trophy"></i> Rank Mensal
-                    </button>
-                    <button id="nav-annual" onclick="switchTab('annual')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide">
-                        <i class="fa-solid fa-crown"></i> Rank Anual (Top 5)
-                    </button>
-                    <button id="nav-matches" onclick="switchTab('matches')" class="px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide">
-                        <i class="fa-solid fa-crosshairs"></i> Histórico
-                    </button>
-                </nav>
-
-                <!-- Auth / User Area -->
-                <div class="flex items-center gap-3">
-                    <div id="user-status-container" class="hidden sm:flex items-center gap-3 bg-nord-card px-4 py-2 rounded-xl border border-nord-border">
-                        <div class="text-right">
-                            <div id="logged-user-name" class="font-bold text-sm text-white">--</div>
-                            <div id="logged-user-role" class="text-[10px] text-nord-cyan font-mono uppercase tracking-wider">--</div>
-                        </div>
-                        <button onclick="logout()" title="Sair da Conta" class="text-gray-400 hover:text-nord-orange transition-colors p-2 rounded-lg hover:bg-nord-border/50">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                        </button>
-                    </div>
-
-                    <button id="btn-open-login" onclick="openLoginModal()" class="px-4 py-2.5 rounded-xl bg-nord-cyan/10 border border-nord-cyan/30 text-nord-cyan hover:bg-nord-cyan hover:text-black font-bold text-sm transition-all flex items-center gap-2 font-display tracking-wide">
-                        <i class="fa-solid fa-user-shield"></i> Entrar
-                    </button>
-
-                    <!-- Mobile Menu Button -->
-                    <button onclick="toggleMobileMenu()" class="md:hidden text-gray-400 hover:text-white p-2">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
+                <div>
+                    <h1 class="font-teko text-3xl font-bold leading-none tracking-wider text-white">NORD <span class="text-blue-500">CS2</span></h1>
+                    <p class="text-xs text-gray-400 tracking-widest uppercase font-semibold">Esports System</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Mobile Nav Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-b border-nord-border bg-nord-card px-4 pt-2 pb-4 space-y-2">
-            <button onclick="switchTab('monthly'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
-                <i class="fa-solid fa-trophy text-nord-cyan"></i> Rank Mensal
-            </button>
-            <button onclick="switchTab('annual'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
-                <i class="fa-solid fa-crown text-nord-orange"></i> Rank Anual (Top 5)
-            </button>
-            <button onclick="switchTab('matches'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm text-white hover:bg-nord-border flex items-center gap-3 font-display">
-                <i class="fa-solid fa-crosshairs text-gray-400"></i> Histórico de Partidas
-            </button>
+            <!-- Logged User Info / Logout -->
+            <div id="nav-user-area" class="flex items-center space-x-4">
+                <!-- Injetado via JS -->
+            </div>
         </div>
     </header>
 
-    <!-- Main Content Body -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- CONTAINER PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
 
-        <!-- Admin Control Toolbar (Visible ONLY to ADMs) -->
-        <div id="admin-toolbar" class="hidden mb-8 p-4 bg-gradient-to-r from-nord-orange/15 via-nord-card to-nord-cyan/15 border border-nord-orange/40 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-nord-orange/20 border border-nord-orange/50 flex items-center justify-center text-nord-orange font-bold">
-                    <i class="fa-solid fa-shield-halved text-lg"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-white text-base font-display">PAINEL ADMINISTRATIVO</h3>
-                    <p class="text-xs text-gray-400">Gerenciamento restrito aos Capitães NORD</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3 flex-wrap">
-                <button onclick="openMatchModal()" class="px-4 py-2.5 rounded-xl bg-nord-orange hover:bg-orange-600 text-white font-black text-xs uppercase font-display tracking-wider transition-all shadow-lg flex items-center gap-2 glow-orange">
-                    <i class="fa-solid fa-plus-circle"></i> Lançar Partida
+        <!-- NAVEGAÇÃO DE ABAS -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 border-b border-gray-800 pb-4">
+            <div class="flex space-x-2 sm:space-x-4">
+                <button onclick="switchTab('ranking')" id="tab-btn-ranking" class="px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+                    <i class="fa-solid fa-trophy"></i> Ranks
                 </button>
-                <button onclick="confirmResetMonth()" class="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-bold text-xs uppercase font-display tracking-wider transition-all flex items-center gap-2">
-                    <i class="fa-solid fa-arrows-rotate"></i> Resetar Mês (Virada)
+                <button onclick="switchTab('partidas')" id="tab-btn-partidas" class="px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700">
+                    <i class="fa-solid fa-crosshairs"></i> Registros de Partidas
+                </button>
+            </div>
+
+            <!-- Botão de Ação Admin -->
+            <div id="admin-actions-nav" class="flex space-x-3 hidden">
+                <button onclick="openModalRegistrarPartida()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-emerald-600/20 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> Nova Partida
+                </button>
+                <button onclick="confirmarResetMensal()" class="px-4 py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-semibold text-sm rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> Resetar Rank Mensal
                 </button>
             </div>
         </div>
 
-        <!-- ================= TAB 1: RANK MENSAL ================= -->
-        <section id="tab-monthly" class="space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-nord-card p-6 rounded-2xl border border-nord-border shadow-lg">
+        <!-- ABA 1: RANKINGS (MENSAL E ANUAL) -->
+        <div id="view-ranking" class="space-y-10">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- RANK MENSAL (TOP 1 AO 14) -->
+                <div class="lg:col-span-7 bg-nord-card rounded-2xl border border-gray-800 p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="font-teko text-3xl font-bold tracking-wide text-white flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-alt text-blue-500"></i> RANK MENSAL
+                            </h2>
+                            <p class="text-xs text-gray-400">Atualizado partida a partida | Top 14 NORD</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs rounded-full font-medium">Em Andamento</span>
+                    </div>
+
+                    <!-- Lista Rank Mensal -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-xs font-semibold text-gray-400 border-b border-gray-800 uppercase tracking-wider">
+                                    <th class="pb-3 px-3">#</th>
+                                    <th class="pb-3 px-3">Jogador</th>
+                                    <th class="pb-3 px-3 text-center">Pts Mensais</th>
+                                    <th class="pb-3 px-3 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-mensal" class="divide-y divide-gray-800/50 text-sm">
+                                <!-- Injetado via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RANK ANUAL (TOP 1 AO 5) -->
+                <div class="lg:col-span-5 bg-nord-card rounded-2xl border border-gray-800 p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="font-teko text-3xl font-bold tracking-wide text-white flex items-center gap-2">
+                                <i class="fa-solid fa-crown text-amber-500"></i> RANK ANUAL
+                            </h2>
+                            <p class="text-xs text-gray-400">Acumulado por dezenas do mensal | Top 5</p>
+                        </div>
+                        <span class="px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs rounded-full font-medium">Temporada 2026</span>
+                    </div>
+
+                    <!-- Lista Rank Anual -->
+                    <div class="space-y-3" id="list-anual">
+                        <!-- Injetado via JS -->
+                    </div>
+
+                    <div class="mt-6 bg-gray-900/60 rounded-xl p-4 border border-gray-800 text-xs text-gray-400 space-y-1">
+                        <p class="font-semibold text-gray-300"><i class="fa-solid fa-info-circle text-blue-400"></i> Como funciona a conversão:</p>
+                        <p>A cada 10 pontos conquistados no Rank Mensal, o jogador converte em 1 Ponto Anual ao término do mês.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ABA 2: REGISTRO DE PARTIDAS -->
+        <div id="view-partidas" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-black uppercase text-white tracking-wide flex items-center gap-3 font-display">
-                        <i class="fa-solid fa-fire text-nord-orange"></i> Ranking Mensal NORD
-                    </h1>
-                    <p class="text-sm text-gray-400 mt-1">Pontuação acumulada de partidas no mês vigente (Vitórias + Kills + Honra)</p>
-                </div>
-                <div class="flex items-center gap-3 bg-nord-bg px-4 py-2.5 rounded-xl border border-nord-border">
-                    <span class="text-xs font-mono text-gray-400 uppercase">Validação da Partida:</span>
-                    <span class="text-xs font-bold text-nord-cyan bg-nord-cyan/10 px-2.5 py-1 rounded border border-nord-cyan/30">
-                        Mínimo 2 NORDs
-                    </span>
+                    <h2 class="font-teko text-3xl font-bold tracking-wide text-white">HISTÓRICO DE PARTIDAS</h2>
+                    <p class="text-xs text-gray-400">Registro oficial de partidas jogadas em grupo pela NORD</p>
                 </div>
             </div>
 
-            <!-- Leaderboard Grid -->
-            <div id="monthly-rank-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <!-- Dynamic Player Cards Loaded Here -->
+            <div id="list-partidas" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Injetado via JS -->
             </div>
-        </section>
-
-        <!-- ================= TAB 2: RANK ANUAL (TOP 5) ================= -->
-        <section id="tab-annual" class="hidden space-y-8">
-            <div class="text-center max-w-2xl mx-auto space-y-2">
-                <h1 class="text-3xl font-black uppercase tracking-wider text-white flex items-center justify-center gap-3 font-display">
-                    <i class="fa-solid fa-crown text-nord-gold text-3xl"></i> Rank Anual NORD
-                </h1>
-                <p class="text-sm text-gray-400">
-                    Hall da Fama Top 5 da equipe. Cada 10 pontos mensais no encerramento convertem em +1 Ponto Anual.
-                </p>
-            </div>
-
-            <!-- Podium Visual (Top 3) -->
-            <div id="annual-podium" class="flex flex-col md:flex-row items-end justify-center gap-4 pt-10 pb-4 max-w-4xl mx-auto">
-                <!-- Dynamically rendered podium positions: 2nd, 1st, 3rd -->
-            </div>
-
-            <!-- Top 4 & 5 List -->
-            <div class="max-w-3xl mx-auto space-y-3">
-                <h3 class="text-xs font-mono text-gray-400 uppercase tracking-widest px-2 font-display">Outras Posições do Top 5</h3>
-                <div id="annual-rest-list" class="space-y-3">
-                    <!-- Loaded dynamically -->
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 3: HISTÓRICO DE PARTIDAS ================= -->
-        <section id="tab-matches" class="hidden space-y-6">
-            <div class="flex items-center justify-between bg-nord-card p-6 rounded-2xl border border-nord-border shadow-lg">
-                <div>
-                    <h1 class="text-2xl font-black uppercase text-white tracking-wide flex items-center gap-3 font-display">
-                        <i class="fa-solid fa-clock-rotate-left text-nord-cyan"></i> Histórico de Confrontos
-                    </h1>
-                    <p class="text-sm text-gray-400 mt-1">Registro detalhado com comprovantes de partidas jogadas pelo time</p>
-                </div>
-            </div>
-
-            <div id="match-history-list" class="space-y-4">
-                <!-- Dynamically populated matches -->
-            </div>
-        </section>
+        </div>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-auto border-t border-nord-border bg-nord-card/50 py-6">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500 font-mono">
-            TIME NORD CS2 &copy; 2026 - COMPETITIVE SYSTEM &bull; FIRESTORE CLOUD REALTIME SYNC
+    <!-- FOOTER -->
+    <footer class="bg-nord-card border-t border-gray-800 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
+            &copy; 2026 NORD Counter-Strike 2 Team. Todos os direitos reservados.
         </div>
     </footer>
 
-    <!-- ================= MODAL: LOGIN / CADASTRO DE SENHA ================= -->
-    <div id="modal-login" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
-        <div class="bg-nord-card border border-nord-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="text-center space-y-2 mb-6">
-                <div class="w-12 h-12 bg-nord-cyan/10 border border-nord-cyan/30 text-nord-cyan rounded-xl flex items-center justify-center mx-auto text-xl">
-                    <i class="fa-solid fa-user-lock"></i>
+    <!-- MODAL DE LOGIN / SELEÇÃO DE USUÁRIO -->
+    <div id="modal-login" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-nord-card w-full max-w-md rounded-2xl border border-gray-800 p-6 sm:p-8 shadow-2xl relative">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center font-teko text-4xl font-bold tracking-wider mb-3 shadow-lg shadow-blue-500/30 text-white">
+                    N
                 </div>
-                <h2 class="text-xl font-black text-white font-display uppercase tracking-wide">Autenticação NORD</h2>
-                <p class="text-xs text-gray-400">Selecione seu nick. Na 1ª vez, a senha informada será registrada no Firestore.</p>
+                <h3 class="font-teko text-4xl font-bold text-white tracking-wide">ENTRAR NO SISTEMA</h3>
+                <p class="text-xs text-gray-400">Selecione seu nick para acessar o painel</p>
             </div>
 
-            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+            <!-- FORM SELEÇÃO OU SENHA -->
+            <div id="login-step-select" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-mono text-gray-300 uppercase mb-2">Selecione seu Usuário</label>
-                    <select id="login-username" required class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white focus:outline-none focus:border-nord-cyan text-sm font-bold">
-                        <option value="" disabled selected>-- Selecione um membro --</option>
-                        <optgroup label="Administradores (ADMs)">
-                            <option value="capitao NORD">capitao NORD</option>
-                            <option value="Mateus NORD">Mateus NORD</option>
-                            <option value="Zyrax NORD">Zyrax NORD</option>
+                    <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Selecione seu Perfil</label>
+                    <select id="select-user-login" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500">
+                        <option value="" disabled selected>Escolha um jogador...</option>
+                        <optgroup label="ADMINISTRADORES">
+                            <option value="Capitao Nord">Capitao Nord (ADM)</option>
+                            <option value="Zyrax Nord">Zyrax Nord (ADM)</option>
+                            <option value="Mateus Nord">Mateus Nord (ADM)</option>
                         </optgroup>
-                        <optgroup label="Jogadores">
-                            <option value="Briza NORD">Briza NORD</option>
-                                <option value="Pereira NORD">Pereira NORD</option>
-                            <option value="Silva NORD">Silva NORD</option>
-                            <option value="Cabo NORD">Cabo NORD</option>
-                            <option value="Arno NORD">Arno NORD</option>
-                            <option value="Tenente NORD">Tenente NORD</option>
+                        <optgroup label="MEMBROS">
+                            <option value="Anor Nord">Anor Nord</option>
+                            <option value="Briza Nord">Briza Nord</option>
+                            <option value="Cabo Nord">Cabo Nord</option>
+                            <option value="Pereira Nord">Pereira Nord</option>
+                            <option value="Silva Nord">Silva Nord</option>
+                            <option value="Tenente Nord">Tenente Nord</option>
                         </optgroup>
                     </select>
                 </div>
+                <button onclick="avancarLogin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-blue-600/30 text-sm">
+                    Continuar <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
 
-                <div>
-                    <label class="block text-xs font-mono text-gray-300 uppercase mb-2">Senha de Acesso</label>
-                    <input type="password" id="login-password" required placeholder="Digite sua senha..." class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white focus:outline-none focus:border-nord-cyan text-sm">
+            <div id="login-step-password" class="space-y-4 hidden">
+                <div class="bg-gray-900/80 p-3 rounded-lg border border-gray-800 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-gray-500 block">Perfil Selecionado:</span>
+                        <span id="target-user-name" class="font-bold text-white text-sm"></span>
+                    </div>
+                    <button onclick="voltarStepLogin()" class="text-xs text-blue-400 hover:underline">Alterar</button>
                 </div>
 
-                <div id="login-error" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold text-center"></div>
+                <div id="first-login-notice" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-400">
+                    <i class="fa-solid fa-key mr-1"></i> <b>Primeiro Acesso:</b> Defina uma senha para proteger sua conta.
+                </div>
 
-                <button type="submit" class="w-full py-3 bg-nord-cyan hover:bg-cyan-400 text-black font-black uppercase text-sm rounded-xl transition-all shadow-lg glow-cyan font-display tracking-wider">
-                    Entrar no Sistema
+                <div>
+                    <label id="label-password-input" class="block text-xs font-semibold uppercase text-gray-400 mb-1">Digite sua Senha</label>
+                    <input type="password" id="input-password" placeholder="••••••••" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+
+                <button onclick="efetuarLogin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-blue-600/30 text-sm">
+                    Entrar no Painel
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- ================= MODAL: LANÇAR PARTIDA (ADM) ================= -->
-    <div id="modal-match" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4 overflow-y-auto">
-        <div class="bg-nord-card border border-nord-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl my-8 relative max-h-[90vh] flex flex-col">
+    <!-- MODAL PERFIL JOGADOR -->
+    <div id="modal-perfil" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-nord-card w-full max-w-lg rounded-2xl border border-gray-800 p-6 shadow-2xl relative">
+            <button onclick="closeModalPerfil()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-4 border-b border-nord-border">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-nord-orange/20 text-nord-orange border border-nord-orange/40 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-gamepad"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-black text-white font-display uppercase tracking-wide">Registrar Nova Partida</h2>
-                        <p class="text-xs text-gray-400">Insira as estatísticas dos integrantes NORD participantes</p>
-                    </div>
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-2xl flex items-center justify-center font-teko text-3xl font-bold text-white shadow-lg">
+                    <span id="perfil-initials">N</span>
                 </div>
-                <button onclick="closeMatchModal()" class="text-gray-400 hover:text-white text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <div>
+                    <h3 id="perfil-name" class="font-teko text-3xl font-bold text-white leading-none"></h3>
+                    <span id="perfil-role" class="text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-gray-800 text-gray-400"></span>
+                </div>
             </div>
 
-            <!-- Modal Content Form -->
-            <form id="form-match" onsubmit="handleMatchSubmit(event)" class="space-y-6 pt-4 overflow-y-auto pr-1">
+            <!-- ESTATÍSTICAS HISTÓRICAS (ACUMULADAS) -->
+            <div class="mb-6">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Estatísticas Vitais (Acumulado Histórico)</h4>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800 text-center">
+                        <span class="block text-2xl font-bold text-emerald-400 font-teko" id="perfil-vitorias">0</span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-trophy text-emerald-400 mr-1"></i> Vitórias</span>
+                    </div>
+                    <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800 text-center">
+                        <span class="block text-2xl font-bold text-rose-400 font-teko" id="perfil-kills">0</span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-crosshairs text-rose-400 mr-1"></i> Kills</span>
+                    </div>
+                    <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800 text-center">
+                        <span class="block text-2xl font-bold text-amber-400 font-teko" id="perfil-honra">0</span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-star text-amber-400 mr-1"></i> Honras</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PONTUAÇÃO ATUAL -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-blue-950/30 p-3 rounded-xl border border-blue-500/20 text-center">
+                    <span class="text-xs text-blue-400 block font-medium">Pontos Mensais Atuais</span>
+                    <span class="text-2xl font-bold text-white font-teko" id="perfil-pts-mensal">0</span>
+                </div>
+                <div class="bg-amber-950/30 p-3 rounded-xl border border-amber-500/20 text-center">
+                    <span class="text-xs text-amber-400 block font-medium">Pontos Anuais Totais</span>
+                    <span class="text-2xl font-bold text-white font-teko" id="perfil-pts-anual">0</span>
+                </div>
+            </div>
+
+            <button onclick="closeModalPerfil()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+                Fechar Perfil
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR PARTIDA (ADMINS ONLY) -->
+    <div id="modal-registrar-partida" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-nord-card w-full max-w-2xl rounded-2xl border border-gray-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto relative">
+            <button onclick="closeModalRegistrarPartida()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h3 class="font-teko text-3xl font-bold text-white mb-1"><i class="fa-solid fa-shield-halved text-blue-500 mr-2"></i> REGISTRAR PARTIDA NORD</h3>
+            <p class="text-xs text-gray-400 mb-6">Mínimo de 2 membros na partida. Vitória garante obrigatoriamente +1 ponto para todos.</p>
+
+            <form id="form-partida" onsubmit="salvarPartida(event)" class="space-y-6">
                 
-                <!-- Number of Participants -->
-                <div class="bg-nord-bg/60 p-4 rounded-xl border border-nord-border flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-white font-display">Quantidade de Jogadores NORD</label>
-                        <p class="text-xs text-gray-400">Mínimo obrigatório: 2 jogadores</p>
-                    </div>
-                    <select id="match-player-count" onchange="renderMatchPlayerForms()" class="bg-nord-bg border border-nord-border rounded-lg px-4 py-2 text-nord-cyan font-bold focus:outline-none focus:border-nord-cyan text-sm">
-                        <option value="2">2 Jogadores</option>
-                        <option value="3">3 Jogadores</option>
-                        <option value="4">4 Jogadores</option>
-                        <option value="5" selected>5 Jogadores</option>
-                    </select>
-                </div>
-
-                <!-- Proof Image Selection -->
-                <div class="space-y-2">
-                    <label class="block text-xs font-mono text-gray-300 uppercase">Comprovante da Partida (Screenshot)</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <input type="text" id="match-image-url" placeholder="URL da imagem (https://...)" class="w-full bg-nord-bg border border-nord-border rounded-xl p-3 text-white text-xs focus:outline-none focus:border-nord-cyan">
-                        </div>
-                        <div class="relative">
-                            <input type="file" id="match-image-file" accept="image/*" onchange="handleFileUpload(event)" class="hidden">
-                            <label for="match-image-file" class="w-full bg-nord-bg border border-nord-border hover:border-nord-cyan rounded-xl p-2.5 text-gray-400 hover:text-white text-xs flex items-center justify-center gap-2 cursor-pointer transition-all">
-                                <i class="fa-solid fa-upload text-nord-cyan"></i>
-                                <span id="file-upload-label">Carregar Arquivo Local</span>
-                            </label>
-                        </div>
-                    </div>
-                    <input type="hidden" id="match-image-base64">
-                </div>
-
-                <!-- Dynamic Players List Container -->
-                <div class="space-y-4">
-                    <h3 class="text-xs font-mono text-gray-400 uppercase tracking-wider font-display">Desempenho por Membro</h3>
-                    <div id="match-players-container" class="space-y-4">
-                        <!-- Dynamic player rows rendered here -->
+                <!-- SELEÇÃO DE JOGADORES DA NORD -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                        1. Selecione os Jogadores NORD da Partida (Mínimo 2)
+                    </label>
+                    <div id="checkboxes-jogadores" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <!-- Injetado via JS -->
                     </div>
                 </div>
 
-                <!-- Action Footer -->
-                <div class="pt-4 border-t border-nord-border flex justify-end gap-3">
-                    <button type="button" onclick="closeMatchModal()" class="px-5 py-2.5 rounded-xl bg-nord-border hover:bg-nord-border/80 text-gray-300 font-bold text-sm">
+                <!-- ESTATÍSTICAS INDIVIDUAIS POR JOGADOR SELECIONADO -->
+                <div id="container-stats-jogadores" class="space-y-4 hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 border-b border-gray-800 pb-2">
+                        2. Desempenho dos Integrantes
+                    </label>
+                    <div id="dynamic-player-fields" class="space-y-3">
+                        <!-- Abas e campos dinamicos via JS -->
+                    </div>
+                </div>
+
+                <!-- UPLOAD DE PROVA (IMAGEM) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                        3. Comprovante da Partida (Print da Tela)
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-900/50 hover:bg-gray-900 transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-400 mb-2"></i>
+                                <p class="text-xs text-gray-400"><span class="font-semibold text-white">Clique para carregar</span> a imagem da prova</p>
+                                <p class="text-[10px] text-gray-500 mt-1">PNG, JPG ou WEBP</p>
+                            </div>
+                            <input id="input-prova-img" type="file" accept="image/*" class="hidden" onchange="previewImagem(event)">
+                        </label>
+                    </div>
+                    <div id="preview-img-container" class="mt-3 hidden">
+                        <img id="img-preview" src="" alt="Preview Prova" class="max-h-40 rounded-lg border border-gray-700 mx-auto object-cover">
+                    </div>
+                </div>
+
+                <!-- SUBMIT -->
+                <div class="pt-4 border-t border-gray-800 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModalRegistrarPartida()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-nord-orange hover:bg-orange-600 text-white font-black uppercase text-xs font-display tracking-wider shadow-lg glow-orange transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> Salvar & Pontuar
+                    <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/30">
+                        Confirmar e Calcular Pontos
                     </button>
                 </div>
+
             </form>
-
         </div>
     </div>
 
-    <!-- Modal Image Preview -->
-    <div id="modal-image-preview" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md hidden p-4" onclick="closeImagePreviewModal()">
-        <div class="relative max-w-4xl w-full" onclick="event.stopPropagation()">
-            <button onclick="closeImagePreviewModal()" class="absolute -top-10 right-0 text-white text-2xl hover:text-nord-cyan">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <img id="preview-modal-img" src="" alt="Comprovante CS2" class="w-full max-h-[85vh] object-contain rounded-2xl border border-nord-border shadow-2xl">
-        </div>
+    <!-- NOTIFICAÇÕES TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 border border-gray-700 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center space-x-3">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-blue-400"></i>
+        <span id="toast-message" class="text-sm font-medium"></span>
     </div>
 
-    <!-- Toast Notification Overlay -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
-
-    <!-- ================= JAVASCRIPT & FIREBASE INTEGRATION ================= -->
-    <script type="module">
-        // Firebase Modular SDK Imports matching specified setup
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-        // Required Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAerJxRg8JF2W2DLLCLrI7d9pIFNprMQl0",
-            authDomain: "chatcat-73364.firebaseapp.com",
-            databaseURL: "https://chatcat-73364-default-rtdb.firebaseio.com",
-            projectId: "chatcat-73364",
-            storageBucket: "chatcat-73364.firebasestorage.app",
-            messagingSenderId: "645503800079",
-            appId: "1:645503800079:web:850860c42bec8a73e0e47a",
-            measurementId: "G-1K6TJ1G44X"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // Constant Lists
-        const ALL_PLAYERS = [
-            "Briza NORD", "Silva NORD", "Cabo NORD", "Arno NORD", "Tenente NORD"
+    <!-- APP LOGIC JS -->
+    <script>
+        // LISTAS PADRÃO DE JOGADORES
+        const PLAYERS_ROSTER = [
+            { name: "Capitao Nord", role: "ADM" },
+            { name: "Zyrax Nord", role: "ADM" },
+            { name: "Mateus Nord", role: "ADM" },
+            { name: "Anor Nord", role: "MEMBRO" },
+            { name: "Briza Nord", role: "MEMBRO" },
+            { name: "Cabo Nord", role: "MEMBRO" },
+            { name: "Pereira Nord", role: "MEMBRO" },
+            { name: "Silva Nord", role: "MEMBRO" },
+            { name: "Tenente Nord", role: "MEMBRO" }
         ];
-        const ALL_ADMS = [
-            "capitao NORD", "Mateus NORD", "Zyrax NORD"
-        ];
-        const ALL_MEMBERS = [...ALL_ADMS, ...ALL_PLAYERS];
 
-        // Global State Tree
+        // ESTADO GLOBAL DA APLICAÇÃO (Salvo no LocalStorage para persistência no navegador)
         let appState = {
-            users: {},      // { "Briza NORD": { password: "...", role: "player", monthlyPoints: 0, annualPoints: 0, killsTotal: 0, matchesTotal: 0 } }
-            matches: []     // [ { id: "...", date: "...", registeredBy: "...", image: "...", participants: [...] } ]
+            currentUser: null,
+            passwords: {}, // name -> pass
+            playersStats: {}, // name -> { mensalPts, anualPts, totalKills, totalWins, totalHonors }
+            partidas: [] // lista de partidas registradas
         };
 
-        let currentUser = null; // Currently logged user object: { name, role }
+        // INICIALIZAÇÃO
+        window.onload = function() {
+            loadDatabase();
+            checkSession();
+            renderRankings();
+            renderPartidas();
+        };
 
-        // Central Document Reference
-        const docRef = doc(db, "nord_team_cs2", "app_data");
-
-        // Authenticate anonymously for Firebase access
-        signInAnonymously(auth).then(() => {
-            console.log("Firebase Anonymous Auth Connected.");
-            initFirestoreListener();
-        }).catch(err => {
-            console.error("Firebase Auth error:", err);
-            showToast("Erro de conexão com o Firebase Auth", "error");
-        });
-
-        // Real-time Firestore Listener
-        function initFirestoreListener() {
-            onSnapshot(docRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    appState = snapshot.data();
-                    ensureInitialStateStructure();
-                } else {
-                    seedInitialState();
-                }
-                renderAllUI();
-            }, (error) => {
-                console.error("Firestore Listener error:", error);
-                showToast("Erro ao sincronizar dados do Firestore", "error");
-            });
-        }
-
-        function seedInitialState() {
-            const initialUsers = {};
-            ALL_MEMBERS.forEach(name => {
-                initialUsers[name] = {
-                    password: null, // Initialized on first user login
-                    role: ALL_ADMS.includes(name) ? "admin" : "player",
-                    monthlyPoints: 0,
-                    annualPoints: 0,
-                    killsTotal: 0,
-                    matchesTotal: 0
-                };
-            });
-
-            appState = {
-                users: initialUsers,
-                matches: []
-            };
-
-            saveStateToFirestore();
-        }
-
-        function ensureInitialStateStructure() {
-            if (!appState.users) appState.users = {};
-            ALL_MEMBERS.forEach(name => {
-                if (!appState.users[name]) {
-                    appState.users[name] = {
-                        password: null,
-                        role: ALL_ADMS.includes(name) ? "admin" : "player",
-                        monthlyPoints: 0,
-                        annualPoints: 0,
-                        killsTotal: 0,
-                        matchesTotal: 0
+        // CARREGAR DADOS DE ARMAZENAMENTO LOCAL OU INICIALIZAR
+        function loadDatabase() {
+            const savedState = localStorage.getItem('NORD_CS2_DATA_V1');
+            if (savedState) {
+                appState = JSON.parse(savedState);
+            } else {
+                // Inicializar do zero com os jogadores base
+                PLAYERS_ROSTER.forEach(p => {
+                    appState.playersStats[p.name] = {
+                        mensalPts: 0,
+                        anualPts: 0,
+                        totalKills: 0,
+                        totalWins: 0,
+                        totalHonors: 0
                     };
-                }
-            });
-            if (!appState.matches) appState.matches = [];
-        }
-
-        async function saveStateToFirestore() {
-            try {
-                await setDoc(docRef, appState);
-            } catch (error) {
-                console.error("Error saving state to Firestore:", error);
-                showToast("Erro ao gravar dados no Firestore!", "error");
+                });
+                saveDatabase();
             }
         }
 
-        // --- AUTHENTICATION & LOGIN LOGIC ---
-        window.openLoginModal = function() {
-            document.getElementById('modal-login').classList.remove('hidden');
-            document.getElementById('login-error').classList.add('hidden');
-        };
+        function saveDatabase() {
+            localStorage.setItem('NORD_CS2_DATA_V1', JSON.stringify(appState));
+        }
 
-        window.closeLoginModal = function() {
+        // SISTEMA DE AUTH / LOGIN
+        let selectedLoginUser = null;
+
+        function avancarLogin() {
+            const userSelect = document.getElementById('select-user-login').value;
+            if (!userSelect) {
+                showToast('Selecione um jogador para continuar.', 'warning');
+                return;
+            }
+            selectedLoginUser = userSelect;
+            document.getElementById('target-user-name').innerText = selectedLoginUser;
+
+            document.getElementById('login-step-select').classList.add('hidden');
+            document.getElementById('login-step-password').classList.remove('hidden');
+
+            // Verificar se é primeiro login (sem senha cadastrada)
+            const hasPassword = appState.passwords[selectedLoginUser];
+            const notice = document.getElementById('first-login-notice');
+            const labelInput = document.getElementById('label-password-input');
+
+            if (!hasPassword) {
+                notice.classList.remove('hidden');
+                labelInput.innerText = "Crie sua Senha";
+            } else {
+                notice.classList.add('hidden');
+                labelInput.innerText = "Digite sua Senha";
+            }
+        }
+
+        function voltarStepLogin() {
+            document.getElementById('login-step-password').classList.add('hidden');
+            document.getElementById('login-step-select').classList.remove('hidden');
+            document.getElementById('input-password').value = '';
+        }
+
+        function efetuarLogin() {
+            const passInput = document.getElementById('input-password').value.trim();
+            if (!passInput) {
+                showToast('Digite uma senha válida.', 'warning');
+                return;
+            }
+
+            const storedPass = appState.passwords[selectedLoginUser];
+
+            if (!storedPass) {
+                // Registrar primeira senha
+                appState.passwords[selectedLoginUser] = passInput;
+                appState.currentUser = selectedLoginUser;
+                saveDatabase();
+                showToast(`Senha criada com sucesso! Bem-vindo, ${selectedLoginUser}.`, 'success');
+                finishLogin();
+            } else {
+                // Validar Senha
+                if (storedPass === passInput) {
+                    appState.currentUser = selectedLoginUser;
+                    showToast(`Bem-vindo de volta, ${selectedLoginUser}!`, 'success');
+                    finishLogin();
+                } else {
+                    showToast('Senha incorreta!', 'error');
+                }
+            }
+        }
+
+        function finishLogin() {
             document.getElementById('modal-login').classList.add('hidden');
-        };
-
-        window.handleLoginSubmit = function(e) {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const errorDiv = document.getElementById('login-error');
-
-            if (!username || !password) {
-                errorDiv.textContent = "Preencha todos os campos!";
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Check if user belongs to fixed NORD roster
-            if (!ALL_MEMBERS.includes(username)) {
-                errorDiv.textContent = "Usuário não pertence à equipe NORD";
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Ensure profile exists in appState
-            if (!appState.users) appState.users = {};
-            if (!appState.users[username]) {
-                appState.users[username] = {
-                    password: null,
-                    role: ALL_ADMS.includes(username) ? "admin" : "player",
-                    monthlyPoints: 0,
-                    annualPoints: 0,
-                    killsTotal: 0,
-                    matchesTotal: 0
-                };
-            }
-
-            const userProfile = appState.users[username];
-
-            // Password registration on first login vs validation on subsequent logins
-            if (!userProfile.password) {
-                userProfile.password = password;
-                saveStateToFirestore();
-                showToast(`Primeiro acesso realizado! Senha cadastrada com sucesso para ${username}.`, "success");
-            } else if (userProfile.password !== password) {
-                errorDiv.textContent = "Senha incorreta!";
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Successful authentication
-            currentUser = {
-                name: username,
-                role: userProfile.role
-            };
-
-            closeLoginModal();
-            renderAuthHeader();
-            renderAdminControls();
-            showToast(`Bem-vindo, ${username}!`, "success");
-        };
-
-        window.logout = function() {
-            currentUser = null;
-            renderAuthHeader();
-            renderAdminControls();
-            showToast("Você saiu da conta.", "info");
-        };
-
-        function renderAuthHeader() {
-            const statusContainer = document.getElementById('user-status-container');
-            const openLoginBtn = document.getElementById('btn-open-login');
-
-            if (currentUser) {
-                statusContainer.classList.remove('hidden');
-                openLoginBtn.classList.add('hidden');
-                document.getElementById('logged-user-name').textContent = currentUser.name;
-                document.getElementById('logged-user-role').textContent = currentUser.role === 'admin' ? 'ADMINISTRADOR' : 'JOGADOR';
-            } else {
-                statusContainer.classList.add('hidden');
-                openLoginBtn.classList.remove('hidden');
-            }
+            document.getElementById('input-password').value = '';
+            checkSession();
         }
 
-        function renderAdminControls() {
-            const adminToolbar = document.getElementById('admin-toolbar');
-            if (currentUser && currentUser.role === 'admin') {
-                adminToolbar.classList.remove('hidden');
-            } else {
-                adminToolbar.classList.add('hidden');
-            }
+        function logout() {
+            appState.currentUser = null;
+            checkSession();
+            document.getElementById('modal-login').classList.remove('hidden');
+            voltarStepLogin();
+            showToast('Você saiu da sua conta.', 'info');
         }
 
-        // --- MATCH REGISTRATION LOGIC ---
-        window.openMatchModal = function() {
-            if (!currentUser || currentUser.role !== 'admin') {
-                showToast("Apenas administradores podem registrar partidas.", "error");
-                return;
-            }
-            document.getElementById('modal-match').classList.remove('hidden');
-            document.getElementById('match-image-url').value = '';
-            document.getElementById('match-image-base64').value = '';
-            document.getElementById('file-upload-label').textContent = 'Carregar Arquivo Local';
-            renderMatchPlayerForms();
-        };
+        function checkSession() {
+            const navUserArea = document.getElementById('nav-user-area');
+            const adminActionsNav = document.getElementById('admin-actions-nav');
 
-        window.closeMatchModal = function() {
-            document.getElementById('modal-match').classList.add('hidden');
-        };
+            if (appState.currentUser) {
+                const userObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+                const isAdmin = userObj && userObj.role === 'ADM';
 
-        window.handleFileUpload = function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                if (file.size > 2 * 1024 * 1024) {
-                    showToast("Tamanho máximo de imagem: 2MB.", "error");
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('match-image-base64').value = e.target.result;
-                    document.getElementById('file-upload-label').textContent = file.name;
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        window.renderMatchPlayerForms = function() {
-            const count = parseInt(document.getElementById('match-player-count').value);
-            const container = document.getElementById('match-players-container');
-            container.innerHTML = '';
-
-            for (let i = 0; i < count; i++) {
-                const defaultName = ALL_MEMBERS[i % ALL_MEMBERS.length];
-                
-                const row = document.createElement('div');
-                row.className = "bg-nord-bg p-4 rounded-xl border border-nord-border space-y-3";
-                row.innerHTML = `
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div class="w-full sm:w-1/3">
-                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Jogador ${i + 1}</label>
-                            <select class="player-select w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs font-bold focus:border-nord-cyan focus:outline-none">
-                                ${ALL_MEMBERS.map(m => `<option value="${m}" ${m === defaultName ? 'selected' : ''}>${m}</option>`).join('')}
-                            </select>
+                navUserArea.innerHTML = `
+                    <div class="flex items-center space-x-3 bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-800">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold font-teko text-lg text-white">
+                            ${appState.currentUser.charAt(0)}
                         </div>
-                        <div class="w-full sm:w-1/4">
-                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Kills Registradas</label>
-                            <input type="number" min="0" value="15" class="player-kills w-full bg-nord-card border border-nord-border rounded-lg p-2 text-white text-xs font-bold focus:border-nord-cyan focus:outline-none">
+                        <div class="text-left">
+                            <span class="block text-xs font-bold text-white leading-tight">${appState.currentUser}</span>
+                            <span class="text-[10px] text-gray-400 ${isAdmin ? 'text-blue-400 font-semibold' : ''}">${userObj ? userObj.role : 'MEMBRO'}</span>
                         </div>
-                        <div class="w-full sm:w-1/4">
-                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Resultado da Partida</label>
-                            <select class="player-win w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs focus:border-nord-cyan focus:outline-none">
-                                <option value="true" selected>Vitória (+1 pt)</option>
-                                <option value="false">Derrota (0 pts)</option>
-                            </select>
-                        </div>
-                        <div class="w-full sm:w-1/4">
-                            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Ponto de Honra</label>
-                            <select class="player-honor w-full bg-nord-card border border-nord-border rounded-lg p-2.5 text-white text-xs focus:border-nord-cyan focus:outline-none">
-                                <option value="true">Sim (+1 pt)</option>
-                                <option value="false" selected>Não (0 pts)</option>
-                            </select>
-                        </div>
+                        <button onclick="logout()" title="Sair" class="text-gray-500 hover:text-rose-400 ml-2 transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
                     </div>
                 `;
-                container.appendChild(row);
-            }
-        };
 
-        window.handleMatchSubmit = function(e) {
-            e.preventDefault();
-
-            if (!currentUser || currentUser.role !== 'admin') {
-                showToast("Apenas administradores podem registrar partidas.", "error");
-                return;
-            }
-
-            const selects = document.querySelectorAll('.player-select');
-            const killsInputs = document.querySelectorAll('.player-kills');
-            const winSelects = document.querySelectorAll('.player-win');
-            const honorSelects = document.querySelectorAll('.player-honor');
-
-            const participants = [];
-            const selectedNames = new Set();
-
-            for (let i = 0; i < selects.length; i++) {
-                const name = selects[i].value;
-                if (selectedNames.has(name)) {
-                    showToast(`O membro ${name} foi selecionado em duplicidade!`, "error");
-                    return;
+                if (isAdmin) {
+                    adminActionsNav.classList.remove('hidden');
+                } else {
+                    adminActionsNav.classList.add('hidden');
                 }
-                selectedNames.add(name);
-
-                const kills = parseInt(killsInputs[i].value) || 0;
-                const win = winSelects[i].value === 'true';
-                const honor = honorSelects[i].value === 'true';
-
-                // Explicit Rules Engine Calculation
-                // 1. Victory: +1 pt
-                // 2. Kills: +1 pt per 15 full kills (Math.floor(kills / 15))
-                // 3. Honor: +1 pt
-                const winPts = win ? 1 : 0;
-                const killPts = Math.floor(kills / 15);
-                const honorPts = honor ? 1 : 0;
-                const totalPts = winPts + killPts + honorPts;
-
-                participants.push({
-                    name,
-                    kills,
-                    win,
-                    honor,
-                    pointsAwarded: totalPts
-                });
+            } else {
+                document.getElementById('modal-login').classList.remove('hidden');
             }
-
-            // Mandatory Rule: Minimum 2 NORD players per match
-            if (participants.length < 2) {
-                showToast("A partida precisa conter no mínimo 2 jogadores do time NORD!", "error");
-                return;
-            }
-
-            const imageUrlInput = document.getElementById('match-image-url').value.trim();
-            const imageBase64 = document.getElementById('match-image-base64').value;
-            const proofImage = imageBase64 || imageUrlInput || 'https://placehold.co/600x400/151921/00f0ff?text=CS2+Match+Proof';
-
-            const newMatch = {
-                id: 'match_' + Date.now(),
-                date: new Date().toLocaleString('pt-BR'),
-                registeredBy: currentUser.name,
-                image: proofImage,
-                participants: participants
-            };
-
-            // Update app state & accumulate points for each player
-            appState.matches.unshift(newMatch);
-
-            participants.forEach(p => {
-                if (appState.users[p.name]) {
-                    appState.users[p.name].monthlyPoints = (appState.users[p.name].monthlyPoints || 0) + p.pointsAwarded;
-                    appState.users[p.name].killsTotal = (appState.users[p.name].killsTotal || 0) + p.kills;
-                    appState.users[p.name].matchesTotal = (appState.users[p.name].matchesTotal || 0) + 1;
-                }
-            });
-
-            saveStateToFirestore();
-            closeMatchModal();
-            showToast("Partida lançada e salva no Firestore com sucesso!", "success");
-        };
-
-        // --- RESET MONTH LOGIC ---
-        window.confirmResetMonth = function() {
-            if (!currentUser || currentUser.role !== 'admin') {
-                showToast("Apenas administradores podem resetar o mês.", "error");
-                return;
-            }
-
-            if (confirm("ATENÇÃO: Deseja realmente virar o mês?\n\n- Cada 10 pontos mensais acumulados viram +1 Ponto Anual.\n- A pontuação do Rank Mensal será zerada.")) {
-                executeMonthlyReset();
-            }
-        };
-
-        function executeMonthlyReset() {
-            Object.keys(appState.users).forEach(username => {
-                const user = appState.users[username];
-                const annualGained = Math.floor((user.monthlyPoints || 0) / 10);
-                user.annualPoints = (user.annualPoints || 0) + annualGained;
-                user.monthlyPoints = 0; // Reset monthly points
-            });
-
-            saveStateToFirestore();
-            showToast("Virada de mês concluída! Pontuação convertida para o Rank Anual.", "success");
         }
 
-        // --- UI RENDERING ENGINE ---
-        function renderAllUI() {
-            renderAuthHeader();
-            renderAdminControls();
-            renderMonthlyRank();
-            renderAnnualRank();
-            renderMatchHistory();
+        // CONTROLADOR DE ABAS
+        function switchTab(tab) {
+            const viewRanking = document.getElementById('view-ranking');
+            const viewPartidas = document.getElementById('view-partidas');
+            const btnRanking = document.getElementById('tab-btn-ranking');
+            const btnPartidas = document.getElementById('tab-btn-partidas');
+
+            if (tab === 'ranking') {
+                viewRanking.classList.remove('hidden');
+                viewPartidas.classList.add('hidden');
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            } else {
+                viewRanking.classList.add('hidden');
+                viewPartidas.classList.remove('hidden');
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            }
         }
 
-        // 1. Render Monthly Leaderboard Cards
-        function renderMonthlyRank() {
-            const container = document.getElementById('monthly-rank-list');
-            container.innerHTML = '';
+        // RENDERIZAÇÃO DOS RANKS
+        function renderRankings() {
+            // MENSAL (TOP 1 A 14)
+            const sortedMensal = [...PLAYERS_ROSTER].sort((a, b) => {
+                return (appState.playersStats[b.name]?.mensalPts || 0) - (appState.playersStats[a.name]?.mensalPts || 0);
+            }).slice(0, 14);
 
-            const sortedPlayers = Object.entries(appState.users)
-                .map(([name, data]) => ({ name, ...data }))
-                .sort((a, b) => (b.monthlyPoints || 0) - (a.monthlyPoints || 0));
+            const tableMensal = document.getElementById('table-mensal');
+            tableMensal.innerHTML = '';
 
-            sortedPlayers.forEach((player, index) => {
-                const rankPos = index + 1;
-                let badgeStyle = "bg-nord-card border-nord-border text-gray-400";
-                if (rankPos === 1) badgeStyle = "bg-nord-gold/20 border-nord-gold/60 text-nord-gold glow-gold";
-                else if (rankPos === 2) badgeStyle = "bg-nord-silver/20 border-nord-silver/60 text-nord-silver";
-                else if (rankPos === 3) badgeStyle = "bg-nord-bronze/20 border-nord-bronze/60 text-nord-bronze";
+            sortedMensal.forEach((player, index) => {
+                const stats = appState.playersStats[player.name] || { mensalPts: 0 };
+                const pos = index + 1;
+                
+                let rankBadge = `<span class="font-bold text-gray-400 w-6 inline-block text-center">${pos}</span>`;
+                if (pos === 1) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold flex items-center justify-center text-xs">1</span>`;
+                if (pos === 2) rankBadge = `<span class="w-6 h-6 rounded-full bg-gray-300/20 text-gray-300 border border-gray-300/40 font-bold flex items-center justify-center text-xs">2</span>`;
+                if (pos === 3) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-700/20 text-amber-600 border border-amber-700/40 font-bold flex items-center justify-center text-xs">3</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition cursor-pointer";
+                tr.onclick = () => openModalPerfil(player.name);
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3">${rankBadge}</td>
+                    <td class="py-3.5 px-3">
+                        <div class="font-semibold text-white flex items-center gap-2">
+                            ${player.name}
+                            ${player.role === 'ADM' ? '<span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-teko text-xl font-bold text-blue-400">${stats.mensalPts} pts</td>
+                    <td class="py-3.5 px-3 text-right">
+                        <button class="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded transition">
+                            Perfil
+                        </button>
+                    </td>
+                `;
+                tableMensal.appendChild(tr);
+            });
+
+            // ANUAL (TOP 1 A 5)
+            const sortedAnual = [...PLAYERS_ROSTER].sort((a, b) => {
+                return (appState.playersStats[b.name]?.anualPts || 0) - (appState.playersStats[a.name]?.anualPts || 0);
+            }).slice(0, 5);
+
+            const listAnual = document.getElementById('list-anual');
+            listAnual.innerHTML = '';
+
+            sortedAnual.forEach((player, index) => {
+                const stats = appState.playersStats[player.name] || { anualPts: 0 };
+                const pos = index + 1;
 
                 const card = document.createElement('div');
-                card.className = "bg-nord-card border border-nord-border rounded-2xl p-5 relative overflow-hidden transition-all hover:border-nord-cyan/50 hover:shadow-xl group";
+                card.onclick = () => openModalPerfil(player.name);
+                card.className = "bg-gray-900/80 hover:bg-gray-800/80 border border-gray-800 rounded-xl p-3.5 flex items-center justify-between transition cursor-pointer";
                 card.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl font-black text-sm flex items-center justify-center border font-display ${badgeStyle}">
-                                #${rankPos}
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-white text-base group-hover:text-nord-cyan transition-colors flex items-center gap-2 font-display">
-                                    ${player.name}
-                                    ${player.role === 'admin' ? '<i class="fa-solid fa-shield-cat text-xs text-nord-orange" title="Administrador"></i>' : ''}
-                                </h3>
-                                <span class="text-xs font-mono text-gray-400">${player.matchesTotal || 0} partidas no total</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 bg-nord-bg/70 p-3 rounded-xl border border-nord-border/60 text-center">
-                        <div>
-                            <span class="block text-[10px] font-mono text-gray-400 uppercase">Pontos Mensais</span>
-                            <span class="text-2xl font-black text-nord-cyan font-mono">${player.monthlyPoints || 0} <span class="text-xs text-gray-400">pts</span></span>
+                    <div class="flex items-center space-x-3">
+                        <div class="font-teko text-2xl font-bold w-8 text-center ${pos === 1 ? 'text-amber-400' : pos === 2 ? 'text-gray-300' : pos === 3 ? 'text-amber-600' : 'text-gray-500'}">
+                            #${pos}
                         </div>
                         <div>
-                            <span class="block text-[10px] font-mono text-gray-400 uppercase">Total Kills</span>
-                            <span class="text-2xl font-black text-nord-orange font-mono">${player.killsTotal || 0}</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // 2. Render Annual Rank Podium & TOP 5
-        function renderAnnualRank() {
-            const podiumContainer = document.getElementById('annual-podium');
-            const restContainer = document.getElementById('annual-rest-list');
-            podiumContainer.innerHTML = '';
-            restContainer.innerHTML = '';
-
-            // Strictly filter and sort top 5
-            const sortedAnnual = Object.entries(appState.users)
-                .map(([name, data]) => ({ name, ...data }))
-                .sort((a, b) => (b.annualPoints || 0) - (a.annualPoints || 0))
-                .slice(0, 5);
-
-            if (sortedAnnual.length === 0) return;
-
-            const first = sortedAnnual[0];
-            const second = sortedAnnual[1];
-            const third = sortedAnnual[2];
-            const fourth = sortedAnnual[3];
-            const fifth = sortedAnnual[4];
-
-            const renderPodiumBlock = (player, rank, heightClass, colorClass, borderClass, icon) => {
-                if (!player) return '';
-                return `
-                    <div class="flex-1 w-full flex flex-col items-center">
-                        <div class="mb-3 text-center">
-                            <div class="w-14 h-14 mx-auto rounded-2xl ${colorClass}/20 border ${borderClass} flex items-center justify-center text-2xl text-white mb-1 shadow-lg">
-                                <i class="fa-solid ${icon}"></i>
-                            </div>
-                            <div class="font-black text-white text-sm sm:text-base font-display">${player.name}</div>
-                            <div class="text-xs font-mono text-nord-cyan font-bold">${player.annualPoints || 0} Pts Anuais</div>
-                        </div>
-
-                        <div class="w-full ${heightClass} ${colorClass}/10 border-t-4 ${borderClass} bg-gradient-to-b from-nord-card to-nord-bg rounded-t-2xl p-4 flex flex-col items-center justify-between shadow-2xl">
-                            <span class="text-3xl font-black ${colorClass.replace('bg-', 'text-')} font-display">#${rank}</span>
-                        </div>
-                    </div>
-                `;
-            };
-
-            let podiumHTML = '';
-            if (second) podiumHTML += renderPodiumBlock(second, 2, 'h-40', 'bg-nord-silver', 'border-nord-silver', 'fa-award');
-            if (first) podiumHTML += renderPodiumBlock(first, 1, 'h-52', 'bg-nord-gold', 'border-nord-gold', 'fa-crown');
-            if (third) podiumHTML += renderPodiumBlock(third, 3, 'h-32', 'bg-nord-bronze', 'border-nord-bronze', 'fa-medal');
-
-            podiumContainer.innerHTML = podiumHTML;
-
-            // Render 4th and 5th position
-            [fourth, fifth].forEach((player, idx) => {
-                if (!player) return;
-                const pos = idx + 4;
-                const row = document.createElement('div');
-                row.className = "bg-nord-card border border-nord-border p-4 rounded-xl flex items-center justify-between shadow-md";
-                row.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="w-8 h-8 rounded-lg bg-nord-bg border border-nord-border flex items-center justify-center font-display font-bold text-gray-400 text-xs">#${pos}</span>
-                        <div>
-                            <div class="font-bold text-white text-sm font-display">${player.name}</div>
-                            <div class="text-xs text-gray-400 font-mono">${player.matchesTotal || 0} partidas registradas</div>
+                            <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                                ${player.name}
+                            </h4>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Top ${pos} Anual</span>
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="text-lg font-black text-nord-cyan font-mono">${player.annualPoints || 0}</span>
-                        <span class="text-xs text-gray-400 block font-mono">pts anuais</span>
+                        <span class="font-teko text-2xl font-bold text-amber-400 leading-none block">${stats.anualPts}</span>
+                        <span class="text-[10px] text-gray-500 font-medium">Pontos Anuais</span>
                     </div>
                 `;
-                restContainer.appendChild(row);
+                listAnual.appendChild(card);
             });
         }
 
-        // 3. Render Match History List
-        function renderMatchHistory() {
-            const container = document.getElementById('match-history-list');
-            container.innerHTML = '';
+        // MODAL E ESTATÍSTICAS DE PERFIL
+        function openModalPerfil(playerName) {
+            const player = PLAYERS_ROSTER.find(p => p.name === playerName);
+            const stats = appState.playersStats[playerName] || { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
 
-            if (!appState.matches || appState.matches.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-nord-card/50 rounded-2xl border border-nord-border/50">
-                        <i class="fa-solid fa-gamepad text-4xl text-gray-600 mb-3 block"></i>
-                        <p class="text-gray-400 font-medium text-sm">Nenhuma partida salva no histórico.</p>
+            document.getElementById('perfil-name').innerText = playerName;
+            document.getElementById('perfil-initials').innerText = playerName.charAt(0);
+            document.getElementById('perfil-role').innerText = player ? player.role : 'MEMBRO';
+            
+            document.getElementById('perfil-vitorias').innerText = stats.totalWins || 0;
+            document.getElementById('perfil-kills').innerText = stats.totalKills || 0;
+            document.getElementById('perfil-honra').innerText = stats.totalHonors || 0;
+
+            document.getElementById('perfil-pts-mensal').innerText = stats.mensalPts || 0;
+            document.getElementById('perfil-pts-anual').innerText = stats.anualPts || 0;
+
+            document.getElementById('modal-perfil').classList.remove('hidden');
+        }
+
+        function closeModalPerfil() {
+            document.getElementById('modal-perfil').classList.add('hidden');
+        }
+
+        // REGISTRO DE PARTIDA (EXCLUSIVO ADM)
+        let loadedBase64Img = "";
+
+        function openModalRegistrarPartida() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Apenas Administradores podem registrar partidas.', 'error');
+                return;
+            }
+
+            const containerCheckboxes = document.getElementById('checkboxes-jogadores');
+            containerCheckboxes.innerHTML = '';
+
+            PLAYERS_ROSTER.forEach(p => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-2 bg-gray-900 border border-gray-800 p-2.5 rounded-lg cursor-pointer hover:border-blue-500/50 transition";
+                label.innerHTML = `
+                    <input type="checkbox" value="${p.name}" onchange="renderDynamicPlayerFields()" class="form-checkbox text-blue-600 rounded bg-gray-800 border-gray-700 focus:ring-0">
+                    <span class="text-xs font-semibold text-gray-300">${p.name}</span>
+                `;
+                containerCheckboxes.appendChild(label);
+            });
+
+            document.getElementById('container-stats-jogadores').classList.add('hidden');
+            document.getElementById('preview-img-container').classList.add('hidden');
+            document.getElementById('form-partida').reset();
+            loadedBase64Img = "";
+
+            document.getElementById('modal-registrar-partida').classList.remove('hidden');
+        }
+
+        function closeModalRegistrarPartida() {
+            document.getElementById('modal-registrar-partida').classList.add('hidden');
+        }
+
+        function renderDynamicPlayerFields() {
+            const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
+            const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
+            const container = document.getElementById('container-stats-jogadores');
+            const fieldsDiv = document.getElementById('dynamic-player-fields');
+
+            fieldsDiv.innerHTML = '';
+
+            if (selectedPlayers.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+
+            selectedPlayers.forEach(playerName => {
+                const pBox = document.createElement('div');
+                pBox.className = "bg-gray-900/90 border border-gray-800 rounded-xl p-4 space-y-3";
+                pBox.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span class="font-bold text-sm text-blue-400"><i class="fa-solid fa-user mr-1"></i> ${playerName}</span>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Vitória (+1 Ponto Obrigatorio)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">Quantidade de Kills</label>
+                            <input type="number" min="0" value="0" id="kills-${playerName}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-blue-500">
+                            <span class="text-[10px] text-gray-500 mt-0.5 block">1 ponto a cada 15 kills</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">Honra na Partida</label>
+                            <select id="honra-${playerName}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-blue-500">
+                                <option value="0">Não (+0 pts)</option>
+                                <option value="1">Sim (+1 pt)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                fieldsDiv.appendChild(pBox);
+            });
+        }
+
+        function previewImagem(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    loadedBase64Img = e.target.result;
+                    document.getElementById('img-preview').src = loadedBase64Img;
+                    document.getElementById('preview-img-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function salvarPartida(e) {
+            e.preventDefault();
+
+            const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
+            const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
+
+            // REGRA: Mínimo 2 jogadores da NORD
+            if (selectedPlayers.length < 2) {
+                showToast('É necessário no mínimo 2 jogadores da NORD na partida!', 'warning');
+                return;
+            }
+
+            if (!loadedBase64Img) {
+                showToast('É necessário enviar o comprovante (print da partida).', 'warning');
+                return;
+            }
+
+            let resumoPartida = [];
+
+            // CALCULAR E ATUALIZAR PONTOS
+            selectedPlayers.forEach(playerName => {
+                const kills = parseInt(document.getElementById(`kills-${playerName}`).value) || 0;
+                const honra = parseInt(document.getElementById(`honra-${playerName}`).value) || 0;
+                const vitoriaPts = 1; // REGRA: Vitória sempre pontua +1
+
+                // PONTOS POR KILL: A cada 15 kills = 1 ponto
+                const killPts = Math.floor(kills / 15);
+
+                // TOTAL DE PONTOS DA PARTIDA PARA O JOGADOR
+                const totalGained = vitoriaPts + killPts + honra;
+
+                // Atualizar stats no banco
+                if (!appState.playersStats[playerName]) {
+                    appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
+                }
+
+                // 1. Mensal
+                appState.playersStats[playerName].mensalPts += totalGained;
+
+                // 2. Acumulados Históricos (Não Resetam)
+                appState.playersStats[playerName].totalWins += 1;
+                appState.playersStats[playerName].totalKills += kills;
+                appState.playersStats[playerName].totalHonors += honra;
+
+                resumoPartida.push({
+                    name: playerName,
+                    kills: kills,
+                    honra: honra,
+                    ptsGained: totalGained
+                });
+            });
+
+            // SALVAR REGISTRO DE PARTIDA
+            const novaPartida = {
+                id: Date.now(),
+                data: new Date().toLocaleDateString('pt-BR') + ' - ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                registeredBy: appState.currentUser,
+                players: resumoPartida,
+                image: loadedBase64Img
+            };
+
+            appState.partidas.unshift(novaPartida);
+            saveDatabase();
+
+            renderRankings();
+            renderPartidas();
+            closeModalRegistrarPartida();
+            showToast('Partida computada com sucesso e pontos atualizados!', 'success');
+        }
+
+        // EXIBIÇÃO HISTÓRICO DE PARTIDAS
+        function renderPartidas() {
+            const listPartidas = document.getElementById('list-partidas');
+            listPartidas.innerHTML = '';
+
+            if (appState.partidas.length === 0) {
+                listPartidas.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-nord-card rounded-2xl border border-gray-800">
+                        <i class="fa-solid fa-folder-open text-4xl text-gray-600 mb-3 block"></i>
+                        <p class="text-sm text-gray-400">Nenhuma partida registrada até o momento.</p>
                     </div>
                 `;
                 return;
             }
 
-            appState.matches.forEach(match => {
+            appState.partidas.forEach(partida => {
                 const card = document.createElement('div');
-                card.className = "bg-nord-card border border-nord-border rounded-2xl overflow-hidden shadow-xl transition-all hover:border-nord-border/80";
-                card.innerHTML = `
-                    <div class="p-5 flex flex-col lg:flex-row gap-6">
-                        <!-- Screenshot Preview Button -->
-                        <div class="w-full lg:w-64 h-40 rounded-xl overflow-hidden bg-nord-bg border border-nord-border relative flex-shrink-0 group cursor-pointer" onclick="openImagePreview('${match.image}')">
-                            <img src="${match.image}" alt="Comprovante CS2" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/600x400/151921/00f0ff?text=Comprovante+CS2'">
-                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-nord-cyan font-bold text-xs gap-2 transition-opacity font-display">
-                                <i class="fa-solid fa-magnifying-glass-plus"></i> Ver Comprovante
-                            </div>
-                        </div>
+                card.className = "bg-nord-card border border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4";
 
-                        <!-- Match Details -->
-                        <div class="flex-grow space-y-4">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-nord-border/60 pb-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-mono bg-nord-cyan/10 text-nord-cyan border border-nord-cyan/30 px-2.5 py-1 rounded-md font-bold">
-                                        <i class="fa-solid fa-calendar-day mr-1"></i> ${match.date}
-                                    </span>
-                                    <span class="text-xs text-gray-400 font-mono">
-                                        ADM: <strong class="text-gray-200">${match.registeredBy}</strong>
-                                    </span>
-                                </div>
-                                <span class="text-xs font-mono text-nord-orange font-bold">
-                                    <i class="fa-solid fa-users mr-1"></i> ${match.participants.length} Jogadores NORD
-                                </span>
-                            </div>
-
-                            <!-- Participants Roster -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                ${match.participants.map(p => `
-                                    <div class="bg-nord-bg/70 border border-nord-border p-3 rounded-xl flex items-center justify-between">
-                                        <div>
-                                            <div class="font-bold text-xs text-white font-display">${p.name}</div>
-                                            <div class="text-[11px] text-gray-400 flex items-center gap-2 mt-0.5 font-mono">
-                                                <span>${p.kills} Kills</span>
-                                                <span>&bull;</span>
-                                                <span class="${p.win ? 'text-green-400 font-bold' : 'text-red-400'}">${p.win ? 'Vitória' : 'Derrota'}</span>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-sm font-black text-nord-cyan font-mono">+${p.pointsAwarded}</span>
-                                            <span class="text-[10px] text-gray-400 block font-mono">pts</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                let playersListHtml = partida.players.map(p => `
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-gray-800/60 last:border-0">
+                        <span class="font-bold text-gray-200">${p.name}</span>
+                        <div class="space-x-3 text-gray-400">
+                            <span><i class="fa-solid fa-crosshairs text-rose-400 mr-1"></i>${p.kills} kills</span>
+                            <span><i class="fa-solid fa-star text-amber-400 mr-1"></i>${p.honra ? 'Honra' : 'Sem honra'}</span>
+                            <span class="font-bold text-blue-400 font-mono">+${p.ptsGained} pts</span>
                         </div>
                     </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-3">
+                            <span class="text-xs text-gray-400 font-mono"><i class="fa-solid fa-clock mr-1"></i> ${partida.data}</span>
+                            <span class="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded">Por: ${partida.registeredBy}</span>
+                        </div>
+                        <div class="space-y-1 mb-4">
+                            <span class="text-[11px] font-bold uppercase text-gray-400 tracking-wider block mb-2">Escalação & Desempenho</span>
+                            ${playersListHtml}
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="verComprovante('${partida.image}')" class="w-full bg-gray-900 hover:bg-gray-800 border border-gray-700 text-xs text-gray-300 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-image text-blue-400"></i> Ver Prova da Partida
+                        </button>
+                    </div>
                 `;
-                container.appendChild(card);
+                listPartidas.appendChild(card);
             });
         }
 
-        // --- IMAGE PREVIEW MODAL ---
-        window.openImagePreview = function(url) {
-            document.getElementById('preview-modal-img').src = url;
-            document.getElementById('modal-image-preview').classList.remove('hidden');
-        };
-
-        window.closeImagePreviewModal = function() {
-            document.getElementById('modal-image-preview').classList.add('hidden');
-        };
-
-        // --- NAVIGATION CONTROLLER ---
-        window.switchTab = function(tabName) {
-            document.getElementById('tab-monthly').classList.add('hidden');
-            document.getElementById('tab-annual').classList.add('hidden');
-            document.getElementById('tab-matches').classList.add('hidden');
-
-            document.getElementById('nav-monthly').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
-            document.getElementById('nav-annual').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
-            document.getElementById('nav-matches').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 text-gray-400 hover:text-white flex items-center gap-2 font-display tracking-wide";
-
-            if (tabName === 'monthly') {
-                document.getElementById('tab-monthly').classList.remove('hidden');
-                document.getElementById('nav-monthly').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-cyan text-black shadow-md font-display tracking-wide";
-            } else if (tabName === 'annual') {
-                document.getElementById('tab-annual').classList.remove('hidden');
-                document.getElementById('nav-annual').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-orange text-white shadow-md font-display tracking-wide";
-            } else if (tabName === 'matches') {
-                document.getElementById('tab-matches').classList.remove('hidden');
-                document.getElementById('nav-matches').className = "px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 flex items-center gap-2 bg-nord-border text-white shadow-md font-display tracking-wide";
-            }
-        };
-
-        window.toggleMobileMenu = function() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        };
-
-        // --- TOAST NOTIFICATIONS ---
-        function showToast(message, type = "info") {
-            const toastContainer = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-
-            let typeStyles = "bg-nord-card border-nord-cyan text-white";
-            if (type === "success") typeStyles = "bg-nord-card border-green-500 text-green-400";
-            if (type === "error") typeStyles = "bg-nord-card border-red-500 text-red-400";
-
-            toast.className = `p-4 rounded-xl border-l-4 shadow-2xl text-xs font-bold transition-all transform duration-300 pointer-events-auto flex items-center gap-3 ${typeStyles}`;
-            toast.innerHTML = `<span>${message}</span>`;
-
-            toastContainer.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
+        function verComprovante(base64Img) {
+            const win = window.open("");
+            win.document.write(`<body style="margin:0;background:#0b0e14;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${base64Img}" style="max-width:95%;max-height:95vh;border-radius:12px;box-shadow:0 0 30px rgba(0,0,0,0.8);"/></body>`);
         }
 
+        // RESET DO RANK MENSAL (CONVERTE CADA 10 PTS MENSAL EM 1 PT ANUAL)
+        function confirmarResetMensal() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Apenas Administradores podem resetar o Rank Mensal.', 'error');
+                return;
+            }
+
+            if (confirm("Deseja realmente resetar o Rank Mensal?\n\n- Os pontos mensais serão resetados a ZERO.\n- A cada 10 pontos mensais acumulados, o jogador ganhará +1 Ponto no Rank Anual.\n- O histórico acumulado dos perfis NUNCA reseta.")) {
+                
+                PLAYERS_ROSTER.forEach(p => {
+                    const stats = appState.playersStats[p.name];
+                    if (stats && stats.mensalPts > 0) {
+                        // REGRA: a cada 10 pontos mensais vira 1 ponto no anual
+                        const conversoesAnual = Math.floor(stats.mensalPts / 10);
+                        stats.anualPts = (stats.anualPts || 0) + conversoesAnual;
+                        
+                        // Zera o mensal
+                        stats.mensalPts = 0;
+                    }
+                });
+
+                saveDatabase();
+                renderRankings();
+                showToast('Rank Mensal resetado com sucesso! Dezenas convertidas para o Rank Anual.', 'success');
+            }
+        }
+
+        // SISTEMA DE NOTIFICAÇÃO DE TOAST
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+
+            if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400";
+            } else if (type === 'warning') {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
     </script>
 </body>
 </html>
