@@ -92,12 +92,9 @@
             </div>
 
             <!-- Botão de Ação Admin -->
-            <div id="admin-actions-nav" class="flex flex-wrap space-x-2 sm:space-x-3 hidden">
+            <div id="admin-actions-nav" class="flex space-x-3 hidden">
                 <button onclick="openModalRegistrarPartida()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-emerald-600/20 flex items-center gap-2">
                     <i class="fa-solid fa-plus-circle"></i> Nova Partida
-                </button>
-                <button onclick="openModalPontosDireto()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-indigo-600/20 flex items-center gap-2">
-                    <i class="fa-solid fa-sliders"></i> Add Pontos Direto
                 </button>
                 <button onclick="confirmarResetMensal()" class="px-4 py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-semibold text-sm rounded-lg transition flex items-center gap-2">
                     <i class="fa-solid fa-rotate-left"></i> Resetar Rank Mensal
@@ -290,21 +287,6 @@
                 </div>
             </div>
 
-            <!-- SEÇÃO DE CARTOES/ADVERTÊNCIAS -->
-            <div class="mb-6 bg-gray-900/80 p-4 rounded-xl border border-gray-800">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-clone text-amber-400"></i> Cartões / Status do Membro
-                    </h4>
-                    <span id="perfil-status-badge" class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"></span>
-                </div>
-                
-                <div id="perfil-cards-container" class="flex justify-between items-center gap-2">
-                    <!-- 5 Botões de cartão injetados via JS -->
-                </div>
-                <p class="text-[10px] text-gray-500 mt-2 text-center" id="perfil-cards-info">Verde (Normal) | Amarelo (Advertência) | Vermelho (Falta Grave)</p>
-            </div>
-
             <!-- PONTUAÇÃO ATUAL -->
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div class="bg-blue-950/30 p-3 rounded-xl border border-blue-500/20 text-center">
@@ -323,39 +305,68 @@
         </div>
     </div>
 
-    <!-- MODAL ADICIONAR PONTOS DIRETO (ADM ONLY) -->
-    <div id="modal-pontos-direto" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-nord-card w-full max-w-md rounded-2xl border border-gray-800 p-6 shadow-2xl relative">
-            <button onclick="closeModalPontosDireto()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+    <!-- MODAL REGISTRAR PARTIDA (ADMINS ONLY) -->
+    <div id="modal-registrar-partida" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-nord-card w-full max-w-2xl rounded-2xl border border-gray-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto relative">
+            <button onclick="closeModalRegistrarPartida()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <h3 class="font-teko text-3xl font-bold text-white mb-1"><i class="fa-solid fa-sliders text-indigo-500 mr-2"></i> PONTUAÇÃO DIRETA</h3>
-            <p class="text-xs text-gray-400 mb-6">Atribua pontos diretamente no Rank Mensal. A pontuação é dividida igualmente entre Vitórias e Kills (ex: 2 pts = 1 Vitória + 15 Kills).</p>
+            <h3 class="font-teko text-3xl font-bold text-white mb-1"><i class="fa-solid fa-shield-halved text-blue-500 mr-2"></i> REGISTRAR PARTIDA NORD</h3>
+            <p class="text-xs text-gray-400 mb-6">Mínimo de 2 membros na partida. Vitória garante obrigatoriamente +1 ponto para todos.</p>
 
-            <form onsubmit="salvarPontosDireto(event)" class="space-y-4">
+            <form id="form-partida" onsubmit="salvarPartida(event)" class="space-y-6">
+                
+                <!-- SELEÇÃO DE JOGADORES DA NORD -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-gray-300 mb-1">Selecione o Jogador</label>
-                    <select id="select-jogador-direto" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500">
-                        <option value="" disabled selected>Escolha um integrante...</option>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                        1. Selecione os Jogadores NORD da Partida (Mínimo 2)
+                    </label>
+                    <div id="checkboxes-jogadores" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <!-- Injetado via JS -->
-                    </select>
+                    </div>
                 </div>
 
+                <!-- ESTATÍSTICAS INDIVIDUAIS POR JOGADOR SELECIONADO -->
+                <div id="container-stats-jogadores" class="space-y-4 hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 border-b border-gray-800 pb-2">
+                        2. Desempenho dos Integrantes
+                    </label>
+                    <div id="dynamic-player-fields" class="space-y-3">
+                        <!-- Abas e campos dinamicos via JS -->
+                    </div>
+                </div>
+
+                <!-- UPLOAD DE PROVA (IMAGEM) -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-gray-300 mb-1">Quantidade de Pontos (Número Par)</label>
-                    <input type="number" id="input-pontos-direto" min="2" step="2" placeholder="Ex: 2, 4, 6, 8..." required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500">
-                    <p class="text-[10px] text-indigo-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i> Apenas valores pares permitidos para divisão exata (Vitória + Kills).</p>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
+                        3. Comprovante da Partida (Print da Tela)
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-900/50 hover:bg-gray-900 transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-400 mb-2"></i>
+                                <p class="text-xs text-gray-400"><span class="font-semibold text-white">Clique para carregar</span> a imagem da prova</p>
+                                <p class="text-[10px] text-gray-500 mt-1">PNG, JPG ou WEBP</p>
+                            </div>
+                            <input id="input-prova-img" type="file" accept="image/*" class="hidden" onchange="previewImagem(event)">
+                        </label>
+                    </div>
+                    <div id="preview-img-container" class="mt-3 hidden">
+                        <img id="img-preview" src="" alt="Preview Prova" class="max-h-40 rounded-lg border border-gray-700 mx-auto object-cover">
+                    </div>
                 </div>
 
+                <!-- SUBMIT -->
                 <div class="pt-4 border-t border-gray-800 flex justify-end space-x-3">
-                    <button type="button" onclick="closeModalPontosDireto()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">
+                    <button type="button" onclick="closeModalRegistrarPartida()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-600/30">
-                        Adicionar Pontos
+                    <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/30">
+                        Confirmar e Calcular Pontos
                     </button>
                 </div>
+
             </form>
         </div>
     </div>
@@ -366,26 +377,560 @@
         <span id="toast-message" class="text-sm font-medium"></span>
     </div>
 
-    <!-- FIREBASE SDK & APP LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- APP LOGIC JS -->
+    <script>
+        // LISTAS PADRÃO DE JOGADORES
+        const PLAYERS_ROSTER = [
+            { name: "Capitao Nord", role: "ADM" },
+            { name: "Zyrax Nord", role: "ADM" },
+            { name: "Mateus Nord", role: "ADM" },
+            { name: "Anor Nord", role: "MEMBRO" },
+            { name: "Briza Nord", role: "MEMBRO" },
+            { name: "Cabo Nord", role: "MEMBRO" },
+            { name: "Pereira Nord", role: "MEMBRO" },
+            { name: "Silva Nord", role: "MEMBRO" },
+            { name: "Tenente Nord", role: "MEMBRO" }
+        ];
 
-        // Firebase Configuration do novo projeto nord-dba5d
-        const firebaseConfig = {
-            apiKey: "AIzaSyBLZ-lOJ9V750N_hFPEFBWEwd0xXVzGKSs",
-            authDomain: "nord-dba5d.firebaseapp.com",
-            projectId: "nord-dba5d",
-            storageBucket: "nord-dba5d.firebasestorage.app",
-            messagingSenderId: "473231525493",
-            appId: "1:473231525493:web:960036abfb644c5cea5a3c"
+        // ESTADO GLOBAL DA APLICAÇÃO (Salvo no LocalStorage para persistência no navegador)
+        let appState = {
+            currentUser: null,
+            passwords: {}, // name -> pass
+            playersStats: {}, // name -> { mensalPts, anualPts, totalKills, totalWins, totalHonors }
+            partidas: [] // lista de partidas registradas
         };
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'nord-cs2-app';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // INICIALIZAÇÃO
+        window.onload = function() {
+            loadDatabase();
+            checkSession();
+            renderRankings();
+            renderPartidas();
+        };
 
-        // LISTAS PADRÃO DE JOGADORES
-<!-- ... existing code -->
+        // CARREGAR DADOS DE ARMAZENAMENTO LOCAL OU INICIALIZAR
+        function loadDatabase() {
+            const savedState = localStorage.getItem('NORD_CS2_DATA_V1');
+            if (savedState) {
+                appState = JSON.parse(savedState);
+            } else {
+                // Inicializar do zero com os jogadores base
+                PLAYERS_ROSTER.forEach(p => {
+                    appState.playersStats[p.name] = {
+                        mensalPts: 0,
+                        anualPts: 0,
+                        totalKills: 0,
+                        totalWins: 0,
+                        totalHonors: 0
+                    };
+                });
+                saveDatabase();
+            }
+        }
+
+        function saveDatabase() {
+            localStorage.setItem('NORD_CS2_DATA_V1', JSON.stringify(appState));
+        }
+
+        // SISTEMA DE AUTH / LOGIN
+        let selectedLoginUser = null;
+
+        function avancarLogin() {
+            const userSelect = document.getElementById('select-user-login').value;
+            if (!userSelect) {
+                showToast('Selecione um jogador para continuar.', 'warning');
+                return;
+            }
+            selectedLoginUser = userSelect;
+            document.getElementById('target-user-name').innerText = selectedLoginUser;
+
+            document.getElementById('login-step-select').classList.add('hidden');
+            document.getElementById('login-step-password').classList.remove('hidden');
+
+            // Verificar se é primeiro login (sem senha cadastrada)
+            const hasPassword = appState.passwords[selectedLoginUser];
+            const notice = document.getElementById('first-login-notice');
+            const labelInput = document.getElementById('label-password-input');
+
+            if (!hasPassword) {
+                notice.classList.remove('hidden');
+                labelInput.innerText = "Crie sua Senha";
+            } else {
+                notice.classList.add('hidden');
+                labelInput.innerText = "Digite sua Senha";
+            }
+        }
+
+        function voltarStepLogin() {
+            document.getElementById('login-step-password').classList.add('hidden');
+            document.getElementById('login-step-select').classList.remove('hidden');
+            document.getElementById('input-password').value = '';
+        }
+
+        function efetuarLogin() {
+            const passInput = document.getElementById('input-password').value.trim();
+            if (!passInput) {
+                showToast('Digite uma senha válida.', 'warning');
+                return;
+            }
+
+            const storedPass = appState.passwords[selectedLoginUser];
+
+            if (!storedPass) {
+                // Registrar primeira senha
+                appState.passwords[selectedLoginUser] = passInput;
+                appState.currentUser = selectedLoginUser;
+                saveDatabase();
+                showToast(`Senha criada com sucesso! Bem-vindo, ${selectedLoginUser}.`, 'success');
+                finishLogin();
+            } else {
+                // Validar Senha
+                if (storedPass === passInput) {
+                    appState.currentUser = selectedLoginUser;
+                    showToast(`Bem-vindo de volta, ${selectedLoginUser}!`, 'success');
+                    finishLogin();
+                } else {
+                    showToast('Senha incorreta!', 'error');
+                }
+            }
+        }
+
+        function finishLogin() {
+            document.getElementById('modal-login').classList.add('hidden');
+            document.getElementById('input-password').value = '';
+            checkSession();
+        }
+
+        function logout() {
+            appState.currentUser = null;
+            checkSession();
+            document.getElementById('modal-login').classList.remove('hidden');
+            voltarStepLogin();
+            showToast('Você saiu da sua conta.', 'info');
+        }
+
+        function checkSession() {
+            const navUserArea = document.getElementById('nav-user-area');
+            const adminActionsNav = document.getElementById('admin-actions-nav');
+
+            if (appState.currentUser) {
+                const userObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+                const isAdmin = userObj && userObj.role === 'ADM';
+
+                navUserArea.innerHTML = `
+                    <div class="flex items-center space-x-3 bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-800">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold font-teko text-lg text-white">
+                            ${appState.currentUser.charAt(0)}
+                        </div>
+                        <div class="text-left">
+                            <span class="block text-xs font-bold text-white leading-tight">${appState.currentUser}</span>
+                            <span class="text-[10px] text-gray-400 ${isAdmin ? 'text-blue-400 font-semibold' : ''}">${userObj ? userObj.role : 'MEMBRO'}</span>
+                        </div>
+                        <button onclick="logout()" title="Sair" class="text-gray-500 hover:text-rose-400 ml-2 transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                `;
+
+                if (isAdmin) {
+                    adminActionsNav.classList.remove('hidden');
+                } else {
+                    adminActionsNav.classList.add('hidden');
+                }
+            } else {
+                document.getElementById('modal-login').classList.remove('hidden');
+            }
+        }
+
+        // CONTROLADOR DE ABAS
+        function switchTab(tab) {
+            const viewRanking = document.getElementById('view-ranking');
+            const viewPartidas = document.getElementById('view-partidas');
+            const btnRanking = document.getElementById('tab-btn-ranking');
+            const btnPartidas = document.getElementById('tab-btn-partidas');
+
+            if (tab === 'ranking') {
+                viewRanking.classList.remove('hidden');
+                viewPartidas.classList.add('hidden');
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            } else {
+                viewRanking.classList.add('hidden');
+                viewPartidas.classList.remove('hidden');
+                btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
+            }
+        }
+
+        // RENDERIZAÇÃO DOS RANKS
+        function renderRankings() {
+            // MENSAL (TOP 1 A 14)
+            const sortedMensal = [...PLAYERS_ROSTER].sort((a, b) => {
+                return (appState.playersStats[b.name]?.mensalPts || 0) - (appState.playersStats[a.name]?.mensalPts || 0);
+            }).slice(0, 14);
+
+            const tableMensal = document.getElementById('table-mensal');
+            tableMensal.innerHTML = '';
+
+            sortedMensal.forEach((player, index) => {
+                const stats = appState.playersStats[player.name] || { mensalPts: 0 };
+                const pos = index + 1;
+                
+                let rankBadge = `<span class="font-bold text-gray-400 w-6 inline-block text-center">${pos}</span>`;
+                if (pos === 1) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold flex items-center justify-center text-xs">1</span>`;
+                if (pos === 2) rankBadge = `<span class="w-6 h-6 rounded-full bg-gray-300/20 text-gray-300 border border-gray-300/40 font-bold flex items-center justify-center text-xs">2</span>`;
+                if (pos === 3) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-700/20 text-amber-600 border border-amber-700/40 font-bold flex items-center justify-center text-xs">3</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition cursor-pointer";
+                tr.onclick = () => openModalPerfil(player.name);
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3">${rankBadge}</td>
+                    <td class="py-3.5 px-3">
+                        <div class="font-semibold text-white flex items-center gap-2">
+                            ${player.name}
+                            ${player.role === 'ADM' ? '<span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-teko text-xl font-bold text-blue-400">${stats.mensalPts} pts</td>
+                    <td class="py-3.5 px-3 text-right">
+                        <button class="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded transition">
+                            Perfil
+                        </button>
+                    </td>
+                `;
+                tableMensal.appendChild(tr);
+            });
+
+            // ANUAL (TOP 1 A 5)
+            const sortedAnual = [...PLAYERS_ROSTER].sort((a, b) => {
+                return (appState.playersStats[b.name]?.anualPts || 0) - (appState.playersStats[a.name]?.anualPts || 0);
+            }).slice(0, 5);
+
+            const listAnual = document.getElementById('list-anual');
+            listAnual.innerHTML = '';
+
+            sortedAnual.forEach((player, index) => {
+                const stats = appState.playersStats[player.name] || { anualPts: 0 };
+                const pos = index + 1;
+
+                const card = document.createElement('div');
+                card.onclick = () => openModalPerfil(player.name);
+                card.className = "bg-gray-900/80 hover:bg-gray-800/80 border border-gray-800 rounded-xl p-3.5 flex items-center justify-between transition cursor-pointer";
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="font-teko text-2xl font-bold w-8 text-center ${pos === 1 ? 'text-amber-400' : pos === 2 ? 'text-gray-300' : pos === 3 ? 'text-amber-600' : 'text-gray-500'}">
+                            #${pos}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                                ${player.name}
+                            </h4>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Top ${pos} Anual</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-teko text-2xl font-bold text-amber-400 leading-none block">${stats.anualPts}</span>
+                        <span class="text-[10px] text-gray-500 font-medium">Pontos Anuais</span>
+                    </div>
+                `;
+                listAnual.appendChild(card);
+            });
+        }
+
+        // MODAL E ESTATÍSTICAS DE PERFIL
+        function openModalPerfil(playerName) {
+            const player = PLAYERS_ROSTER.find(p => p.name === playerName);
+            const stats = appState.playersStats[playerName] || { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
+
+            document.getElementById('perfil-name').innerText = playerName;
+            document.getElementById('perfil-initials').innerText = playerName.charAt(0);
+            document.getElementById('perfil-role').innerText = player ? player.role : 'MEMBRO';
+            
+            document.getElementById('perfil-vitorias').innerText = stats.totalWins || 0;
+            document.getElementById('perfil-kills').innerText = stats.totalKills || 0;
+            document.getElementById('perfil-honra').innerText = stats.totalHonors || 0;
+
+            document.getElementById('perfil-pts-mensal').innerText = stats.mensalPts || 0;
+            document.getElementById('perfil-pts-anual').innerText = stats.anualPts || 0;
+
+            document.getElementById('modal-perfil').classList.remove('hidden');
+        }
+
+        function closeModalPerfil() {
+            document.getElementById('modal-perfil').classList.add('hidden');
+        }
+
+        // REGISTRO DE PARTIDA (EXCLUSIVO ADM)
+        let loadedBase64Img = "";
+
+        function openModalRegistrarPartida() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Apenas Administradores podem registrar partidas.', 'error');
+                return;
+            }
+
+            const containerCheckboxes = document.getElementById('checkboxes-jogadores');
+            containerCheckboxes.innerHTML = '';
+
+            PLAYERS_ROSTER.forEach(p => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-2 bg-gray-900 border border-gray-800 p-2.5 rounded-lg cursor-pointer hover:border-blue-500/50 transition";
+                label.innerHTML = `
+                    <input type="checkbox" value="${p.name}" onchange="renderDynamicPlayerFields()" class="form-checkbox text-blue-600 rounded bg-gray-800 border-gray-700 focus:ring-0">
+                    <span class="text-xs font-semibold text-gray-300">${p.name}</span>
+                `;
+                containerCheckboxes.appendChild(label);
+            });
+
+            document.getElementById('container-stats-jogadores').classList.add('hidden');
+            document.getElementById('preview-img-container').classList.add('hidden');
+            document.getElementById('form-partida').reset();
+            loadedBase64Img = "";
+
+            document.getElementById('modal-registrar-partida').classList.remove('hidden');
+        }
+
+        function closeModalRegistrarPartida() {
+            document.getElementById('modal-registrar-partida').classList.add('hidden');
+        }
+
+        function renderDynamicPlayerFields() {
+            const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
+            const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
+            const container = document.getElementById('container-stats-jogadores');
+            const fieldsDiv = document.getElementById('dynamic-player-fields');
+
+            fieldsDiv.innerHTML = '';
+
+            if (selectedPlayers.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+
+            selectedPlayers.forEach(playerName => {
+                const pBox = document.createElement('div');
+                pBox.className = "bg-gray-900/90 border border-gray-800 rounded-xl p-4 space-y-3";
+                pBox.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span class="font-bold text-sm text-blue-400"><i class="fa-solid fa-user mr-1"></i> ${playerName}</span>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Vitória (+1 Ponto Obrigatorio)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">Quantidade de Kills</label>
+                            <input type="number" min="0" value="0" id="kills-${playerName}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-blue-500">
+                            <span class="text-[10px] text-gray-500 mt-0.5 block">1 ponto a cada 15 kills</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-gray-400 mb-1">Honra na Partida</label>
+                            <select id="honra-${playerName}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-blue-500">
+                                <option value="0">Não (+0 pts)</option>
+                                <option value="1">Sim (+1 pt)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                fieldsDiv.appendChild(pBox);
+            });
+        }
+
+        function previewImagem(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    loadedBase64Img = e.target.result;
+                    document.getElementById('img-preview').src = loadedBase64Img;
+                    document.getElementById('preview-img-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function salvarPartida(e) {
+            e.preventDefault();
+
+            const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
+            const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
+
+            // REGRA: Mínimo 2 jogadores da NORD
+            if (selectedPlayers.length < 2) {
+                showToast('É necessário no mínimo 2 jogadores da NORD na partida!', 'warning');
+                return;
+            }
+
+            if (!loadedBase64Img) {
+                showToast('É necessário enviar o comprovante (print da partida).', 'warning');
+                return;
+            }
+
+            let resumoPartida = [];
+
+            // CALCULAR E ATUALIZAR PONTOS
+            selectedPlayers.forEach(playerName => {
+                const kills = parseInt(document.getElementById(`kills-${playerName}`).value) || 0;
+                const honra = parseInt(document.getElementById(`honra-${playerName}`).value) || 0;
+                const vitoriaPts = 1; // REGRA: Vitória sempre pontua +1
+
+                // PONTOS POR KILL: A cada 15 kills = 1 ponto
+                const killPts = Math.floor(kills / 15);
+
+                // TOTAL DE PONTOS DA PARTIDA PARA O JOGADOR
+                const totalGained = vitoriaPts + killPts + honra;
+
+                // Atualizar stats no banco
+                if (!appState.playersStats[playerName]) {
+                    appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
+                }
+
+                // 1. Mensal
+                appState.playersStats[playerName].mensalPts += totalGained;
+
+                // 2. Acumulados Históricos (Não Resetam)
+                appState.playersStats[playerName].totalWins += 1;
+                appState.playersStats[playerName].totalKills += kills;
+                appState.playersStats[playerName].totalHonors += honra;
+
+                resumoPartida.push({
+                    name: playerName,
+                    kills: kills,
+                    honra: honra,
+                    ptsGained: totalGained
+                });
+            });
+
+            // SALVAR REGISTRO DE PARTIDA
+            const novaPartida = {
+                id: Date.now(),
+                data: new Date().toLocaleDateString('pt-BR') + ' - ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                registeredBy: appState.currentUser,
+                players: resumoPartida,
+                image: loadedBase64Img
+            };
+
+            appState.partidas.unshift(novaPartida);
+            saveDatabase();
+
+            renderRankings();
+            renderPartidas();
+            closeModalRegistrarPartida();
+            showToast('Partida computada com sucesso e pontos atualizados!', 'success');
+        }
+
+        // EXIBIÇÃO HISTÓRICO DE PARTIDAS
+        function renderPartidas() {
+            const listPartidas = document.getElementById('list-partidas');
+            listPartidas.innerHTML = '';
+
+            if (appState.partidas.length === 0) {
+                listPartidas.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-nord-card rounded-2xl border border-gray-800">
+                        <i class="fa-solid fa-folder-open text-4xl text-gray-600 mb-3 block"></i>
+                        <p class="text-sm text-gray-400">Nenhuma partida registrada até o momento.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            appState.partidas.forEach(partida => {
+                const card = document.createElement('div');
+                card.className = "bg-nord-card border border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4";
+
+                let playersListHtml = partida.players.map(p => `
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-gray-800/60 last:border-0">
+                        <span class="font-bold text-gray-200">${p.name}</span>
+                        <div class="space-x-3 text-gray-400">
+                            <span><i class="fa-solid fa-crosshairs text-rose-400 mr-1"></i>${p.kills} kills</span>
+                            <span><i class="fa-solid fa-star text-amber-400 mr-1"></i>${p.honra ? 'Honra' : 'Sem honra'}</span>
+                            <span class="font-bold text-blue-400 font-mono">+${p.ptsGained} pts</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-3">
+                            <span class="text-xs text-gray-400 font-mono"><i class="fa-solid fa-clock mr-1"></i> ${partida.data}</span>
+                            <span class="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded">Por: ${partida.registeredBy}</span>
+                        </div>
+                        <div class="space-y-1 mb-4">
+                            <span class="text-[11px] font-bold uppercase text-gray-400 tracking-wider block mb-2">Escalação & Desempenho</span>
+                            ${playersListHtml}
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="verComprovante('${partida.image}')" class="w-full bg-gray-900 hover:bg-gray-800 border border-gray-700 text-xs text-gray-300 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-image text-blue-400"></i> Ver Prova da Partida
+                        </button>
+                    </div>
+                `;
+                listPartidas.appendChild(card);
+            });
+        }
+
+        function verComprovante(base64Img) {
+            const win = window.open("");
+            win.document.write(`<body style="margin:0;background:#0b0e14;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${base64Img}" style="max-width:95%;max-height:95vh;border-radius:12px;box-shadow:0 0 30px rgba(0,0,0,0.8);"/></body>`);
+        }
+
+        // RESET DO RANK MENSAL (CONVERTE CADA 10 PTS MENSAL EM 1 PT ANUAL)
+        function confirmarResetMensal() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Apenas Administradores podem resetar o Rank Mensal.', 'error');
+                return;
+            }
+
+            if (confirm("Deseja realmente resetar o Rank Mensal?\n\n- Os pontos mensais serão resetados a ZERO.\n- A cada 10 pontos mensais acumulados, o jogador ganhará +1 Ponto no Rank Anual.\n- O histórico acumulado dos perfis NUNCA reseta.")) {
+                
+                PLAYERS_ROSTER.forEach(p => {
+                    const stats = appState.playersStats[p.name];
+                    if (stats && stats.mensalPts > 0) {
+                        // REGRA: a cada 10 pontos mensais vira 1 ponto no anual
+                        const conversoesAnual = Math.floor(stats.mensalPts / 10);
+                        stats.anualPts = (stats.anualPts || 0) + conversoesAnual;
+                        
+                        // Zera o mensal
+                        stats.mensalPts = 0;
+                    }
+                });
+
+                saveDatabase();
+                renderRankings();
+                showToast('Rank Mensal resetado com sucesso! Dezenas convertidas para o Rank Anual.', 'success');
+            }
+        }
+
+        // SISTEMA DE NOTIFICAÇÃO DE TOAST
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+
+            if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400";
+            } else if (type === 'warning') {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
