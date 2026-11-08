@@ -91,22 +91,24 @@
             </div>
 
             <!-- Botões de Ação Admin -->
-            <div id="admin-actions-nav" class="flex flex-wrap space-x-2 sm:space-x-3 hidden">
-                <button onclick="openModalRegistrarPartida()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-emerald-600/20 flex items-center gap-2">
+            <div id="admin-actions-nav" class="flex flex-wrap items-center gap-2 sm:gap-3 hidden">
+                <button onclick="openModalRegistrarPartida()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition shadow-lg shadow-emerald-600/20 flex items-center gap-1.5">
                     <i class="fa-solid fa-plus-circle"></i> Nova Partida
                 </button>
-                <button onclick="openModalPontosDireto()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-indigo-600/20 flex items-center gap-2">
+                <button onclick="openModalPontosDireto()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow-lg shadow-indigo-600/20 flex items-center gap-1.5">
                     <i class="fa-solid fa-sliders"></i> Add Pontos Direto
                 </button>
-                <button onclick="confirmarResetMensal()" class="px-4 py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-semibold text-sm rounded-lg transition flex items-center gap-2">
-                    <i class="fa-solid fa-rotate-left"></i> Resetar Rank Mensal
+                <button onclick="confirmarResetMensal()" class="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-semibold text-xs rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Mensal
+                </button>
+                <button onclick="confirmarResetTotal()" class="px-3.5 py-2 bg-red-950/40 hover:bg-red-600 text-red-500 hover:text-white border border-red-600/50 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> Zerar Tudo
                 </button>
             </div>
         </div>
 
         <!-- ABA 1: RANKINGS (MENSAL E ANUAL) -->
         <div id="view-ranking" class="space-y-10">
-            
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
                 <!-- RANK MENSAL (TOP 1 AO 14) -->
@@ -167,7 +169,6 @@
                 </div>
 
             </div>
-
         </div>
 
         <!-- ABA 2: REGISTRO DE PARTIDAS -->
@@ -395,7 +396,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold uppercase text-gray-300 mb-2">Selecione os Jogadores da Partida</label>
-                    <div id="partida-jogadores-list" class="space-y-2 max-h-48 overflow-y-auto p-2 bg-gray-900/50 rounded-lg border border-gray-800">
+                    <div id="partida-jogadores-list" class="space-y-2 max-h-56 overflow-y-auto p-2 bg-gray-900/50 rounded-lg border border-gray-800">
                         <!-- Injetado Dinamicamente -->
                     </div>
                 </div>
@@ -435,7 +436,9 @@
             updateDoc, 
             collection, 
             onSnapshot, 
-            addDoc 
+            addDoc,
+            getDocs,
+            deleteDoc
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // CONFIGURAÇÃO DO FIREBASE
@@ -458,7 +461,7 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'nord-cs2-prod';
 
-        // ROTAS DO FIRESTORE EM CONFORMIDADE COM AS REGRAS DO SISTEMA
+        // ROTAS DO FIRESTORE
         const playersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
         const passwordsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'security', 'passwords');
         const partidasCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'partidas');
@@ -484,7 +487,7 @@
             partidas: []
         };
 
-        // GARANTIR ESTRUTURA DOS INTEGRANTES NO ESTADO
+        // ESTRUTURA INICIAL DE INTEGRANTES
         window.PLAYERS_ROSTER.forEach(p => {
             window.appState.playersStats[p.name] = {
                 mensalPts: 0,
@@ -627,7 +630,7 @@
             }
         }
 
-        // CONTROLADOR DE ABAS
+        // NAVEGAÇÃO ENTRE ABAS
         window.switchTab = function(tab) {
             const viewRanking = document.getElementById('view-ranking');
             const viewPartidas = document.getElementById('view-partidas');
@@ -790,6 +793,49 @@
             }
         };
 
+        // RESET TOTAL E LIMPEZA DE BANCO (ADM ONLY)
+        window.confirmarResetTotal = async function() {
+            const confirmacao1 = confirm("ATENÇÃO: Ação irreversível! Isso irá apagar TODAS as estatísticas (kills, vitórias, honras, pontos mensais e anuais), cartões e o histórico completo de partidas. Deseja continuar?");
+            if (!confirmacao1) return;
+
+            const confirmacao2 = prompt("Digite 'ZERAR' para confirmar o reset completo de dados:");
+            if (confirmacao2 !== 'ZERAR') {
+                window.showToast('Ação cancelada. A palavra digitada estava incorreta.', 'warning');
+                return;
+            }
+
+            try {
+                // 1. Resetar perfis no Firestore
+                for (const p of window.PLAYERS_ROSTER) {
+                    const resetStats = {
+                        mensalPts: 0,
+                        anualPts: 0,
+                        totalKills: 0,
+                        totalWins: 0,
+                        totalHonors: 0,
+                        cards: ['G', 'G', 'G', 'G', 'G']
+                    };
+                    window.appState.playersStats[p.name] = resetStats;
+                    const playerDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', p.name);
+                    await setDoc(playerDocRef, resetStats);
+                }
+
+                // 2. Apagar todas as partidas no Firestore
+                const partidasSnapshot = await getDocs(partidasCollectionRef);
+                for (const docSnap of partidasSnapshot.docs) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'partidas', docSnap.id));
+                }
+
+                window.appState.partidas = [];
+                renderRankings();
+                renderPartidas();
+                window.showToast('Todos os ranks e histórico de partidas foram zerados com sucesso!', 'success');
+            } catch (err) {
+                console.error("Erro ao zerar dados:", err);
+                window.showToast('Erro ao apagar dados do Firebase.', 'error');
+            }
+        };
+
         // REGISTRAR NOVA PARTIDA (ADM)
         window.openModalRegistrarPartida = function() {
             const container = document.getElementById('partida-jogadores-list');
@@ -801,9 +847,15 @@
                             <input type="checkbox" name="partida-player-check" value="${p.name}" class="rounded bg-gray-800 border-gray-700 text-blue-600 focus:ring-0">
                             <span>${p.name}</span>
                         </label>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-[10px] text-gray-400">Kills:</span>
-                            <input type="number" min="0" value="0" id="kills-${p.name.replace(/\s+/g, '-')}" class="w-16 bg-gray-800 border border-gray-700 rounded p-1 text-center text-xs text-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-1">
+                                <span class="text-[10px] text-gray-400">Kills:</span>
+                                <input type="number" min="0" value="0" id="kills-${p.name.replace(/\s+/g, '-')}" class="w-14 bg-gray-800 border border-gray-700 rounded p-1 text-center text-xs text-white">
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <span class="text-[10px] text-amber-400 font-semibold"><i class="fa-solid fa-star"></i> Honras:</span>
+                                <input type="number" min="0" value="0" id="honors-${p.name.replace(/\s+/g, '-')}" class="w-12 bg-gray-800 border border-gray-700 rounded p-1 text-center text-xs text-amber-400">
+                            </div>
                         </div>
                     </div>
                 `;
@@ -830,12 +882,15 @@
             const participantes = [];
             const isVitoria = resultado === 'Vitoria';
 
-            // Atualiza estatísticas de TODOS os jogadores selecionados no Firestore
             for (const chk of checkboxes) {
                 const name = chk.value;
                 const killsInput = document.getElementById(`kills-${name.replace(/\s+/g, '-')}`);
-                const kills = parseInt(killsInput.value, 10) || 0;
-                participantes.push({ name, kills });
+                const honorsInput = document.getElementById(`honors-${name.replace(/\s+/g, '-')}`);
+                
+                const kills = parseInt(killsInput ? killsInput.value : 0, 10) || 0;
+                const honors = parseInt(honorsInput ? honorsInput.value : 0, 10) || 0;
+                
+                participantes.push({ name, kills, honors });
 
                 const stats = window.appState.playersStats[name] || { 
                     mensalPts: 0, 
@@ -846,14 +901,19 @@
                     cards: ['G','G','G','G','G'] 
                 };
                 
-                // Soma as kills e vitórias para CADA integrante marcado na partida
-                stats.totalKills = (stats.totalKills || 0) + kills;
+                // Atualizar e calcular estatísticas acumulativas
+                stats.totalKills = (Number(stats.totalKills) || 0) + kills;
+                stats.totalHonors = (Number(stats.totalHonors) || 0) + honors;
+
                 if (isVitoria) {
-                    stats.totalWins = (stats.totalWins || 0) + 1;
-                    stats.mensalPts = (stats.mensalPts || 0) + 3;
+                    stats.totalWins = (Number(stats.totalWins) || 0) + 1;
+                    stats.mensalPts = (Number(stats.mensalPts) || 0) + 3;
                 }
 
-                // Salva a atualização individual de cada jogador no banco
+                // Salva estado local para renderização dinâmica rápida
+                window.appState.playersStats[name] = stats;
+
+                // Envia alteração ao Firestore
                 const playerDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', name);
                 await setDoc(playerDocRef, stats, { merge: true });
             }
@@ -961,7 +1021,7 @@
                 const isWin = p.resultado === 'Vitoria';
                 let partHtml = '';
                 (p.participantes || []).forEach(part => {
-                    partHtml += `<span class="text-xs bg-gray-900 px-2 py-1 rounded border border-gray-800 text-gray-300">${part.name} (${part.kills}K)</span>`;
+                    partHtml += `<span class="text-xs bg-gray-900 px-2 py-1 rounded border border-gray-800 text-gray-300">${part.name} <span class="text-rose-400 font-semibold">(${part.kills || 0}K)</span>${part.honors ? ` <span class="text-amber-400 font-semibold"><i class="fa-solid fa-star"></i>${part.honors}</span>` : ''}</span>`;
                 });
 
                 listPartidas.innerHTML += `
