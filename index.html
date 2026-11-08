@@ -92,9 +92,12 @@
             </div>
 
             <!-- Botão de Ação Admin -->
-            <div id="admin-actions-nav" class="flex space-x-3 hidden">
+            <div id="admin-actions-nav" class="flex flex-wrap space-x-2 sm:space-x-3 hidden">
                 <button onclick="openModalRegistrarPartida()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-emerald-600/20 flex items-center gap-2">
                     <i class="fa-solid fa-plus-circle"></i> Nova Partida
+                </button>
+                <button onclick="openModalPontosDireto()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-indigo-600/20 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Add Pontos Direto
                 </button>
                 <button onclick="confirmarResetMensal()" class="px-4 py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-semibold text-sm rounded-lg transition flex items-center gap-2">
                     <i class="fa-solid fa-rotate-left"></i> Resetar Rank Mensal
@@ -287,6 +290,21 @@
                 </div>
             </div>
 
+            <!-- SEÇÃO DE CARTOES/ADVERTÊNCIAS -->
+            <div class="mb-6 bg-gray-900/80 p-4 rounded-xl border border-gray-800">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-clone text-amber-400"></i> Cartões / Status do Membro
+                    </h4>
+                    <span id="perfil-status-badge" class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"></span>
+                </div>
+                
+                <div id="perfil-cards-container" class="flex justify-between items-center gap-2">
+                    <!-- 5 Botões de cartão injetados via JS -->
+                </div>
+                <p class="text-[10px] text-gray-500 mt-2 text-center" id="perfil-cards-info">Verde (Normal) | Amarelo (Advertência) | Vermelho (Falta Grave)</p>
+            </div>
+
             <!-- PONTUAÇÃO ATUAL -->
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div class="bg-blue-950/30 p-3 rounded-xl border border-blue-500/20 text-center">
@@ -305,68 +323,39 @@
         </div>
     </div>
 
-    <!-- MODAL REGISTRAR PARTIDA (ADMINS ONLY) -->
-    <div id="modal-registrar-partida" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-nord-card w-full max-w-2xl rounded-2xl border border-gray-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto relative">
-            <button onclick="closeModalRegistrarPartida()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+    <!-- MODAL ADICIONAR PONTOS DIRETO (ADM ONLY) -->
+    <div id="modal-pontos-direto" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-nord-card w-full max-w-md rounded-2xl border border-gray-800 p-6 shadow-2xl relative">
+            <button onclick="closeModalPontosDireto()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <h3 class="font-teko text-3xl font-bold text-white mb-1"><i class="fa-solid fa-shield-halved text-blue-500 mr-2"></i> REGISTRAR PARTIDA NORD</h3>
-            <p class="text-xs text-gray-400 mb-6">Mínimo de 2 membros na partida. Vitória garante obrigatoriamente +1 ponto para todos.</p>
+            <h3 class="font-teko text-3xl font-bold text-white mb-1"><i class="fa-solid fa-sliders text-indigo-500 mr-2"></i> PONTUAÇÃO DIRETA</h3>
+            <p class="text-xs text-gray-400 mb-6">Atribua pontos diretamente no Rank Mensal. A pontuação é dividida igualmente entre Vitórias e Kills (ex: 2 pts = 1 Vitória + 15 Kills).</p>
 
-            <form id="form-partida" onsubmit="salvarPartida(event)" class="space-y-6">
-                
-                <!-- SELEÇÃO DE JOGADORES DA NORD -->
+            <form onsubmit="salvarPontosDireto(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                        1. Selecione os Jogadores NORD da Partida (Mínimo 2)
-                    </label>
-                    <div id="checkboxes-jogadores" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <label class="block text-xs font-semibold uppercase text-gray-300 mb-1">Selecione o Jogador</label>
+                    <select id="select-jogador-direto" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="" disabled selected>Escolha um integrante...</option>
                         <!-- Injetado via JS -->
-                    </div>
+                    </select>
                 </div>
 
-                <!-- ESTATÍSTICAS INDIVIDUAIS POR JOGADOR SELECIONADO -->
-                <div id="container-stats-jogadores" class="space-y-4 hidden">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 border-b border-gray-800 pb-2">
-                        2. Desempenho dos Integrantes
-                    </label>
-                    <div id="dynamic-player-fields" class="space-y-3">
-                        <!-- Abas e campos dinamicos via JS -->
-                    </div>
-                </div>
-
-                <!-- UPLOAD DE PROVA (IMAGEM) -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                        3. Comprovante da Partida (Print da Tela)
-                    </label>
-                    <div class="flex items-center justify-center w-full">
-                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-900/50 hover:bg-gray-900 transition">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-400 mb-2"></i>
-                                <p class="text-xs text-gray-400"><span class="font-semibold text-white">Clique para carregar</span> a imagem da prova</p>
-                                <p class="text-[10px] text-gray-500 mt-1">PNG, JPG ou WEBP</p>
-                            </div>
-                            <input id="input-prova-img" type="file" accept="image/*" class="hidden" onchange="previewImagem(event)">
-                        </label>
-                    </div>
-                    <div id="preview-img-container" class="mt-3 hidden">
-                        <img id="img-preview" src="" alt="Preview Prova" class="max-h-40 rounded-lg border border-gray-700 mx-auto object-cover">
-                    </div>
+                    <label class="block text-xs font-semibold uppercase text-gray-300 mb-1">Quantidade de Pontos (Número Par)</label>
+                    <input type="number" id="input-pontos-direto" min="2" step="2" placeholder="Ex: 2, 4, 6, 8..." required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <p class="text-[10px] text-indigo-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i> Apenas valores pares permitidos para divisão exata (Vitória + Kills).</p>
                 </div>
 
-                <!-- SUBMIT -->
                 <div class="pt-4 border-t border-gray-800 flex justify-end space-x-3">
-                    <button type="button" onclick="closeModalRegistrarPartida()" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">
+                    <button type="button" onclick="closeModalPontosDireto()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/30">
-                        Confirmar e Calcular Pontos
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-600/30">
+                        Adicionar Pontos
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
@@ -396,7 +385,7 @@
         let appState = {
             currentUser: null,
             passwords: {}, // name -> pass
-            playersStats: {}, // name -> { mensalPts, anualPts, totalKills, totalWins, totalHonors }
+            playersStats: {}, // name -> { mensalPts, anualPts, totalKills, totalWins, totalHonors, cards: ['G','G','G','G','G'] }
             partidas: [] // lista de partidas registradas
         };
 
@@ -413,6 +402,15 @@
             const savedState = localStorage.getItem('NORD_CS2_DATA_V1');
             if (savedState) {
                 appState = JSON.parse(savedState);
+                // Garantir estrutura de cartões para retrocompatibilidade
+                PLAYERS_ROSTER.forEach(p => {
+                    if (!appState.playersStats[p.name]) {
+                        appState.playersStats[p.name] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
+                    }
+                    if (!appState.playersStats[p.name].cards) {
+                        appState.playersStats[p.name].cards = ['G','G','G','G','G'];
+                    }
+                });
             } else {
                 // Inicializar do zero com os jogadores base
                 PLAYERS_ROSTER.forEach(p => {
@@ -421,7 +419,8 @@
                         anualPts: 0,
                         totalKills: 0,
                         totalWins: 0,
-                        totalHonors: 0
+                        totalHonors: 0,
+                        cards: ['G', 'G', 'G', 'G', 'G'] // 'G' = Verde (Green), 'Y' = Amarelo (Yellow), 'R' = Vermelho (Red)
                     };
                 });
                 saveDatabase();
@@ -573,8 +572,9 @@
             tableMensal.innerHTML = '';
 
             sortedMensal.forEach((player, index) => {
-                const stats = appState.playersStats[player.name] || { mensalPts: 0 };
+                const stats = appState.playersStats[player.name] || { mensalPts: 0, cards: ['G','G','G','G','G'] };
                 const pos = index + 1;
+                const isExpulso = (stats.cards || []).filter(c => c === 'R').length === 5;
                 
                 let rankBadge = `<span class="font-bold text-gray-400 w-6 inline-block text-center">${pos}</span>`;
                 if (pos === 1) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold flex items-center justify-center text-xs">1</span>`;
@@ -582,7 +582,7 @@
                 if (pos === 3) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-700/20 text-amber-600 border border-amber-700/40 font-bold flex items-center justify-center text-xs">3</span>`;
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-800/40 transition cursor-pointer";
+                tr.className = `hover:bg-gray-800/40 transition cursor-pointer ${isExpulso ? 'opacity-50 line-through bg-rose-950/10' : ''}`;
                 tr.onclick = () => openModalPerfil(player.name);
                 tr.innerHTML = `
                     <td class="py-3.5 px-3">${rankBadge}</td>
@@ -590,6 +590,7 @@
                         <div class="font-semibold text-white flex items-center gap-2">
                             ${player.name}
                             ${player.role === 'ADM' ? '<span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono">ADM</span>' : ''}
+                            ${isExpulso ? '<span class="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold font-mono uppercase">EXPULSO</span>' : ''}
                         </div>
                     </td>
                     <td class="py-3.5 px-3 text-center font-teko text-xl font-bold text-blue-400">${stats.mensalPts} pts</td>
@@ -611,12 +612,13 @@
             listAnual.innerHTML = '';
 
             sortedAnual.forEach((player, index) => {
-                const stats = appState.playersStats[player.name] || { anualPts: 0 };
+                const stats = appState.playersStats[player.name] || { anualPts: 0, cards: ['G','G','G','G','G'] };
                 const pos = index + 1;
+                const isExpulso = (stats.cards || []).filter(c => c === 'R').length === 5;
 
                 const card = document.createElement('div');
                 card.onclick = () => openModalPerfil(player.name);
-                card.className = "bg-gray-900/80 hover:bg-gray-800/80 border border-gray-800 rounded-xl p-3.5 flex items-center justify-between transition cursor-pointer";
+                card.className = `bg-gray-900/80 hover:bg-gray-800/80 border border-gray-800 rounded-xl p-3.5 flex items-center justify-between transition cursor-pointer ${isExpulso ? 'opacity-50' : ''}`;
                 card.innerHTML = `
                     <div class="flex items-center space-x-3">
                         <div class="font-teko text-2xl font-bold w-8 text-center ${pos === 1 ? 'text-amber-400' : pos === 2 ? 'text-gray-300' : pos === 3 ? 'text-amber-600' : 'text-gray-500'}">
@@ -625,6 +627,7 @@
                         <div>
                             <h4 class="font-bold text-white text-sm flex items-center gap-2">
                                 ${player.name}
+                                ${isExpulso ? '<span class="text-[9px] bg-rose-600 text-white px-1 py-0.2 rounded font-bold uppercase">EXPULSO</span>' : ''}
                             </h4>
                             <span class="text-[10px] text-gray-400 uppercase tracking-wider">Top ${pos} Anual</span>
                         </div>
@@ -639,9 +642,17 @@
         }
 
         // MODAL E ESTATÍSTICAS DE PERFIL
+        let activeModalPlayer = null;
+
         function openModalPerfil(playerName) {
+            activeModalPlayer = playerName;
             const player = PLAYERS_ROSTER.find(p => p.name === playerName);
-            const stats = appState.playersStats[playerName] || { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
+            const stats = appState.playersStats[playerName] || { 
+                mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, 
+                cards: ['G','G','G','G','G'] 
+            };
+
+            if (!stats.cards) stats.cards = ['G','G','G','G','G'];
 
             document.getElementById('perfil-name').innerText = playerName;
             document.getElementById('perfil-initials').innerText = playerName.charAt(0);
@@ -654,7 +665,149 @@
             document.getElementById('perfil-pts-mensal').innerText = stats.mensalPts || 0;
             document.getElementById('perfil-pts-anual').innerText = stats.anualPts || 0;
 
+            // RENDERIZAR SISTEMA DE CARTÕES DO PERFIL
+            renderPerfilCards(playerName, stats.cards);
+
             document.getElementById('modal-perfil').classList.remove('hidden');
+        }
+
+        function renderPerfilCards(playerName, cardsArray) {
+            const container = document.getElementById('perfil-cards-container');
+            const badge = document.getElementById('perfil-status-badge');
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            const isAdmin = currentUserObj && currentUserObj.role === 'ADM';
+
+            container.innerHTML = '';
+
+            const redCount = cardsArray.filter(c => c === 'R').length;
+            const isExpulso = redCount === 5;
+
+            if (isExpulso) {
+                badge.className = "text-[10px] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider bg-rose-600 text-white shadow-lg shadow-rose-600/30";
+                badge.innerText = "EXPULSO DA EQUIPE";
+            } else if (redCount > 0) {
+                badge.className = "text-[10px] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30";
+                badge.innerText = `${redCount} Falta(s) Grave(s)`;
+            } else {
+                badge.className = "text-[10px] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                badge.innerText = "Regular / Sem Punição";
+            }
+
+            cardsArray.forEach((color, index) => {
+                const btn = document.createElement('button');
+                btn.type = "button";
+                
+                // Definir Cores: G = Green (Verde), Y = Yellow (Amarelo), R = Red (Vermelho)
+                let colorClasses = "bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20";
+                if (color === 'Y') colorClasses = "bg-amber-500 border-amber-400 text-white shadow-amber-500/20";
+                if (color === 'R') colorClasses = "bg-rose-600 border-rose-500 text-white shadow-rose-600/30";
+
+                btn.className = `w-full h-11 rounded-lg border-2 font-bold transition flex items-center justify-center text-xs shadow-md ${colorClasses} ${isAdmin ? 'hover:scale-105 cursor-pointer' : 'cursor-default'}`;
+                btn.innerHTML = `<i class="fa-solid fa-shield"></i>`;
+                
+                if (isAdmin) {
+                    btn.title = "Clique para alternar a cor (Verde -> Amarelo -> Vermelho)";
+                    btn.onclick = () => alternarCorCartao(playerName, index);
+                }
+
+                container.appendChild(btn);
+            });
+        }
+
+        function alternarCorCartao(playerName, cardIndex) {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') return;
+
+            const stats = appState.playersStats[playerName];
+            if (!stats) return;
+
+            const currentColor = stats.cards[cardIndex];
+            let nextColor = 'G';
+            if (currentColor === 'G') nextColor = 'Y';
+            else if (currentColor === 'Y') nextColor = 'R';
+            else if (currentColor === 'R') nextColor = 'G';
+
+            stats.cards[cardIndex] = nextColor;
+            saveDatabase();
+
+            renderPerfilCards(playerName, stats.cards);
+            renderRankings();
+
+            const redCount = stats.cards.filter(c => c === 'R').length;
+            if (redCount === 5) {
+                showToast(`JOGADOR ${playerName} ATINGIU 5 CARTÕES VERMELHOS E FOI EXPULSO!`, 'error');
+            } else {
+                showToast(`Cartão do jogador ${playerName} alterado!`, 'info');
+            }
+        }
+
+        // PONTOS DIRETO NO RANK (SEM PROVA DE PARTIDA - EXCLUSIVO ADM)
+        function openModalPontosDireto() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Apenas Administradores podem adicionar pontos diretos.', 'error');
+                return;
+            }
+
+            const select = document.getElementById('select-jogador-direto');
+            select.innerHTML = '<option value="" disabled selected>Escolha um integrante...</option>';
+
+            PLAYERS_ROSTER.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                opt.innerText = `${p.name} (${p.role})`;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('input-pontos-direto').value = '';
+            document.getElementById('modal-pontos-direto').classList.remove('hidden');
+        }
+
+        function closeModalPontosDireto() {
+            document.getElementById('modal-pontos-direto').classList.add('hidden');
+        }
+
+        function salvarPontosDireto(e) {
+            e.preventDefault();
+
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (!currentUserObj || currentUserObj.role !== 'ADM') {
+                showToast('Permissão negada.', 'error');
+                return;
+            }
+
+            const playerName = document.getElementById('select-jogador-direto').value;
+            const pts = parseInt(document.getElementById('input-pontos-direto').value) || 0;
+
+            if (!playerName) {
+                showToast('Selecione um jogador.', 'warning');
+                return;
+            }
+
+            // REGRA: Apenas valores que possam ser divididos meio a meio para VITORIAS + KILLS (Ex: 2 pts -> 1 vitória + 15 kills)
+            if (pts <= 0 || pts % 2 !== 0) {
+                showToast('A pontuação direta precisa ser um valor PAR (ex: 2, 4, 6, 8...).', 'warning');
+                return;
+            }
+
+            const metade = pts / 2;
+            const vitoriasAdicionadas = metade;
+            const killsAdicionadas = metade * 15; // Cada 1 ponto equivale a 15 kills
+
+            const stats = appState.playersStats[playerName];
+            if (stats) {
+                // Adiciona a pontuação no rank mensal
+                stats.mensalPts += pts;
+
+                // Atualiza perfil acumulado proporcionalmente
+                stats.totalWins += vitoriasAdicionadas;
+                stats.totalKills += killsAdicionadas;
+
+                saveDatabase();
+                renderRankings();
+                closeModalPontosDireto();
+                showToast(`+${pts} Pontos adicionados para ${playerName}! (+${vitoriasAdicionadas} Vitórias e +${killsAdicionadas} Kills adicionadas no Perfil).`, 'success');
+            }
         }
 
         function closeModalPerfil() {
@@ -784,7 +937,7 @@
 
                 // Atualizar stats no banco
                 if (!appState.playersStats[playerName]) {
-                    appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0 };
+                    appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
                 }
 
                 // 1. Mensal
