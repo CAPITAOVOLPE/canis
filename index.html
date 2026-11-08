@@ -366,8 +366,29 @@
         <span id="toast-message" class="text-sm font-medium"></span>
     </div>
 
-    <!-- APP LOGIC JS -->
-    <script>
+    <!-- FIREBASE SDK & APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Setup usando variáveis globais ou fallback local
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'nord-cs2-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "demo-key",
+                authDomain: "demo-project.firebaseapp.com",
+                projectId: "demo-project",
+                storageBucket: "demo-project.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:abcdef"
+            };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         // LISTAS PADRÃO DE JOGADORES
         const PLAYERS_ROSTER = [
             { name: "Capitao Nord", role: "ADM" },
@@ -381,60 +402,131 @@
             { name: "Tenente Nord", role: "MEMBRO" }
         ];
 
-        // ESTADO GLOBAL DA APLICAÇÃO (Salvo no LocalStorage para persistência no navegador)
-        let appState = {
+        // ESTADO GLOBAL DA APLICAÇÃO
+        window.appState = {
             currentUser: null,
-            passwords: {}, // name -> pass
-            playersStats: {}, // name -> { mensalPts, anualPts, totalKills, totalWins, totalHonors, cards: ['G','G','G','G','G'] }
-            partidas: [] // lista de partidas registradas
+            passwords: {}, 
+            playersStats: {}, 
+            partidas: [] 
         };
 
-        // INICIALIZAÇÃO
-        window.onload = function() {
-            loadDatabase();
+        let isAuthReady = false;
+
+        // INICIALIZAÇÃO COM FIREBASE
+        window.onload = async function() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                isAuthReady = true;
+                setupRealtimeListeners();
+            } catch (err) {
+                console.warn("Erro ao autenticar no Firebase, operando localmente:", err);
+                loadLocalFallback();
+            }
+
             checkSession();
             renderRankings();
             renderPartidas();
         };
 
-        // CARREGAR DADOS DE ARMAZENAMENTO LOCAL OU INICIALIZAR
-        function loadDatabase() {
-            const savedState = localStorage.getItem('NORD_CS2_DATA_V1');
-            if (savedState) {
-                appState = JSON.parse(savedState);
-                // Garantir estrutura de cartões para retrocompatibilidade
+        // ESCUTADOR EM TEMPO REAL DO FIRESTORE (SINCRONIZA EM TODOS OS DISPOSITIVOS)
+        function setupRealtimeListeners() {
+            if (!isAuthReady) return;
+
+            // Escuta documento com dados dos jogadores e senhas
+            const dataDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_state', 'main_data');
+            onSnapshot(dataDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    if (cloudData.passwords) window.appState.passwords = cloudData.passwords;
+                    if (cloudData.playersStats) window.appState.playersStats = cloudData.playersStats;
+                } else {
+                    // Se ainda não existir no Firestore, inicializa
+                    initializeDefaultCloudStats();
+                }
+                // Garantir estrutura para todos do Roster
                 PLAYERS_ROSTER.forEach(p => {
-                    if (!appState.playersStats[p.name]) {
-                        appState.playersStats[p.name] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
-                    }
-                    if (!appState.playersStats[p.name].cards) {
-                        appState.playersStats[p.name].cards = ['G','G','G','G','G'];
+                    if (!window.appState.playersStats[p.name]) {
+                        window.appState.playersStats[p.name] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
                     }
                 });
+                renderRankings();
+                if (window.activeModalPlayer) {
+                    openModalPerfil(window.activeModalPlayer);
+                }
+            }, (error) => {
+                console.error("Erro no listener em tempo real:", error);
+            });
+
+            // Escuta coleção de partidas registradas
+            const partidasDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_state', 'matches_data');
+            onSnapshot(partidasDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    window.appState.partidas = docSnap.data().partidas || [];
+                    renderPartidas();
+                }
+            }, (error) => {
+                console.error("Erro no listener de partidas:", error);
+            });
+        }
+
+        async function initializeDefaultCloudStats() {
+            const initialStats = {};
+            PLAYERS_ROSTER.forEach(p => {
+                initialStats[p.name] = {
+                    mensalPts: 0,
+                    anualPts: 0,
+                    totalKills: 0,
+                    totalWins: 0,
+                    totalHonors: 0,
+                    cards: ['G', 'G', 'G', 'G', 'G']
+                };
+            });
+            window.appState.playersStats = initialStats;
+            await saveDatabaseCloud();
+        }
+
+        async function saveDatabaseCloud() {
+            if (isAuthReady) {
+                try {
+                    const dataDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_state', 'main_data');
+                    await setDoc(dataDocRef, {
+                        passwords: window.appState.passwords,
+                        playersStats: window.appState.playersStats
+                    }, { merge: true });
+
+                    const matchesDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_state', 'matches_data');
+                    await setDoc(matchesDocRef, {
+                        partidas: window.appState.partidas
+                    }, { merge: true });
+                } catch (e) {
+                    console.error("Erro ao salvar no Firestore:", e);
+                }
             } else {
-                // Inicializar do zero com os jogadores base
-                PLAYERS_ROSTER.forEach(p => {
-                    appState.playersStats[p.name] = {
-                        mensalPts: 0,
-                        anualPts: 0,
-                        totalKills: 0,
-                        totalWins: 0,
-                        totalHonors: 0,
-                        cards: ['G', 'G', 'G', 'G', 'G'] // 'G' = Verde (Green), 'Y' = Amarelo (Yellow), 'R' = Vermelho (Red)
-                    };
-                });
-                saveDatabase();
+                localStorage.setItem('NORD_CS2_DATA_V1', JSON.stringify(window.appState));
             }
         }
 
-        function saveDatabase() {
-            localStorage.setItem('NORD_CS2_DATA_V1', JSON.stringify(appState));
+        function loadLocalFallback() {
+            const savedState = localStorage.getItem('NORD_CS2_DATA_V1');
+            if (savedState) {
+                window.appState = JSON.parse(savedState);
+            } else {
+                PLAYERS_ROSTER.forEach(p => {
+                    window.appState.playersStats[p.name] = {
+                        mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G']
+                    };
+                });
+            }
         }
 
         // SISTEMA DE AUTH / LOGIN
         let selectedLoginUser = null;
 
-        function avancarLogin() {
+        window.avancarLogin = function() {
             const userSelect = document.getElementById('select-user-login').value;
             if (!userSelect) {
                 showToast('Selecione um jogador para continuar.', 'warning');
@@ -446,8 +538,7 @@
             document.getElementById('login-step-select').classList.add('hidden');
             document.getElementById('login-step-password').classList.remove('hidden');
 
-            // Verificar se é primeiro login (sem senha cadastrada)
-            const hasPassword = appState.passwords[selectedLoginUser];
+            const hasPassword = window.appState.passwords[selectedLoginUser];
             const notice = document.getElementById('first-login-notice');
             const labelInput = document.getElementById('label-password-input');
 
@@ -458,41 +549,39 @@
                 notice.classList.add('hidden');
                 labelInput.innerText = "Digite sua Senha";
             }
-        }
+        };
 
-        function voltarStepLogin() {
+        window.voltarStepLogin = function() {
             document.getElementById('login-step-password').classList.add('hidden');
             document.getElementById('login-step-select').classList.remove('hidden');
             document.getElementById('input-password').value = '';
-        }
+        };
 
-        function efetuarLogin() {
+        window.efetuarLogin = async function() {
             const passInput = document.getElementById('input-password').value.trim();
             if (!passInput) {
                 showToast('Digite uma senha válida.', 'warning');
                 return;
             }
 
-            const storedPass = appState.passwords[selectedLoginUser];
+            const storedPass = window.appState.passwords[selectedLoginUser];
 
             if (!storedPass) {
-                // Registrar primeira senha
-                appState.passwords[selectedLoginUser] = passInput;
-                appState.currentUser = selectedLoginUser;
-                saveDatabase();
+                window.appState.passwords[selectedLoginUser] = passInput;
+                window.appState.currentUser = selectedLoginUser;
+                await saveDatabaseCloud();
                 showToast(`Senha criada com sucesso! Bem-vindo, ${selectedLoginUser}.`, 'success');
                 finishLogin();
             } else {
-                // Validar Senha
                 if (storedPass === passInput) {
-                    appState.currentUser = selectedLoginUser;
+                    window.appState.currentUser = selectedLoginUser;
                     showToast(`Bem-vindo de volta, ${selectedLoginUser}!`, 'success');
                     finishLogin();
                 } else {
                     showToast('Senha incorreta!', 'error');
                 }
             }
-        }
+        };
 
         function finishLogin() {
             document.getElementById('modal-login').classList.add('hidden');
@@ -500,29 +589,29 @@
             checkSession();
         }
 
-        function logout() {
-            appState.currentUser = null;
+        window.logout = function() {
+            window.appState.currentUser = null;
             checkSession();
             document.getElementById('modal-login').classList.remove('hidden');
             voltarStepLogin();
             showToast('Você saiu da sua conta.', 'info');
-        }
+        };
 
         function checkSession() {
             const navUserArea = document.getElementById('nav-user-area');
             const adminActionsNav = document.getElementById('admin-actions-nav');
 
-            if (appState.currentUser) {
-                const userObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            if (window.appState.currentUser) {
+                const userObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
                 const isAdmin = userObj && userObj.role === 'ADM';
 
                 navUserArea.innerHTML = `
                     <div class="flex items-center space-x-3 bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-800">
                         <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold font-teko text-lg text-white">
-                            ${appState.currentUser.charAt(0)}
+                            ${window.appState.currentUser.charAt(0)}
                         </div>
                         <div class="text-left">
-                            <span class="block text-xs font-bold text-white leading-tight">${appState.currentUser}</span>
+                            <span class="block text-xs font-bold text-white leading-tight">${window.appState.currentUser}</span>
                             <span class="text-[10px] text-gray-400 ${isAdmin ? 'text-blue-400 font-semibold' : ''}">${userObj ? userObj.role : 'MEMBRO'}</span>
                         </div>
                         <button onclick="logout()" title="Sair" class="text-gray-500 hover:text-rose-400 ml-2 transition">
@@ -542,7 +631,7 @@
         }
 
         // CONTROLADOR DE ABAS
-        function switchTab(tab) {
+        window.switchTab = function(tab) {
             const viewRanking = document.getElementById('view-ranking');
             const viewPartidas = document.getElementById('view-partidas');
             const btnRanking = document.getElementById('tab-btn-ranking');
@@ -559,20 +648,19 @@
                 btnPartidas.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-blue-600 text-white shadow-lg shadow-blue-600/30";
                 btnRanking.className = "px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700";
             }
-        }
+        };
 
         // RENDERIZAÇÃO DOS RANKS
         function renderRankings() {
-            // MENSAL (TOP 1 A 14)
             const sortedMensal = [...PLAYERS_ROSTER].sort((a, b) => {
-                return (appState.playersStats[b.name]?.mensalPts || 0) - (appState.playersStats[a.name]?.mensalPts || 0);
+                return (window.appState.playersStats[b.name]?.mensalPts || 0) - (window.appState.playersStats[a.name]?.mensalPts || 0);
             }).slice(0, 14);
 
             const tableMensal = document.getElementById('table-mensal');
             tableMensal.innerHTML = '';
 
             sortedMensal.forEach((player, index) => {
-                const stats = appState.playersStats[player.name] || { mensalPts: 0, cards: ['G','G','G','G','G'] };
+                const stats = window.appState.playersStats[player.name] || { mensalPts: 0, cards: ['G','G','G','G','G'] };
                 const pos = index + 1;
                 const isExpulso = (stats.cards || []).filter(c => c === 'R').length === 5;
                 
@@ -603,16 +691,15 @@
                 tableMensal.appendChild(tr);
             });
 
-            // ANUAL (TOP 1 A 5)
             const sortedAnual = [...PLAYERS_ROSTER].sort((a, b) => {
-                return (appState.playersStats[b.name]?.anualPts || 0) - (appState.playersStats[a.name]?.anualPts || 0);
+                return (window.appState.playersStats[b.name]?.anualPts || 0) - (window.appState.playersStats[a.name]?.anualPts || 0);
             }).slice(0, 5);
 
             const listAnual = document.getElementById('list-anual');
             listAnual.innerHTML = '';
 
             sortedAnual.forEach((player, index) => {
-                const stats = appState.playersStats[player.name] || { anualPts: 0, cards: ['G','G','G','G','G'] };
+                const stats = window.appState.playersStats[player.name] || { anualPts: 0, cards: ['G','G','G','G','G'] };
                 const pos = index + 1;
                 const isExpulso = (stats.cards || []).filter(c => c === 'R').length === 5;
 
@@ -642,12 +729,12 @@
         }
 
         // MODAL E ESTATÍSTICAS DE PERFIL
-        let activeModalPlayer = null;
+        window.activeModalPlayer = null;
 
-        function openModalPerfil(playerName) {
-            activeModalPlayer = playerName;
+        window.openModalPerfil = function(playerName) {
+            window.activeModalPlayer = playerName;
             const player = PLAYERS_ROSTER.find(p => p.name === playerName);
-            const stats = appState.playersStats[playerName] || { 
+            const stats = window.appState.playersStats[playerName] || { 
                 mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, 
                 cards: ['G','G','G','G','G'] 
             };
@@ -665,16 +752,15 @@
             document.getElementById('perfil-pts-mensal').innerText = stats.mensalPts || 0;
             document.getElementById('perfil-pts-anual').innerText = stats.anualPts || 0;
 
-            // RENDERIZAR SISTEMA DE CARTÕES DO PERFIL
             renderPerfilCards(playerName, stats.cards);
 
             document.getElementById('modal-perfil').classList.remove('hidden');
-        }
+        };
 
         function renderPerfilCards(playerName, cardsArray) {
             const container = document.getElementById('perfil-cards-container');
             const badge = document.getElementById('perfil-status-badge');
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             const isAdmin = currentUserObj && currentUserObj.role === 'ADM';
 
             container.innerHTML = '';
@@ -697,7 +783,6 @@
                 const btn = document.createElement('button');
                 btn.type = "button";
                 
-                // Definir Cores: G = Green (Verde), Y = Yellow (Amarelo), R = Red (Vermelho)
                 let colorClasses = "bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20";
                 if (color === 'Y') colorClasses = "bg-amber-500 border-amber-400 text-white shadow-amber-500/20";
                 if (color === 'R') colorClasses = "bg-rose-600 border-rose-500 text-white shadow-rose-600/30";
@@ -714,11 +799,11 @@
             });
         }
 
-        function alternarCorCartao(playerName, cardIndex) {
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+        async function alternarCorCartao(playerName, cardIndex) {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             if (!currentUserObj || currentUserObj.role !== 'ADM') return;
 
-            const stats = appState.playersStats[playerName];
+            const stats = window.appState.playersStats[playerName];
             if (!stats) return;
 
             const currentColor = stats.cards[cardIndex];
@@ -728,7 +813,7 @@
             else if (currentColor === 'R') nextColor = 'G';
 
             stats.cards[cardIndex] = nextColor;
-            saveDatabase();
+            await saveDatabaseCloud();
 
             renderPerfilCards(playerName, stats.cards);
             renderRankings();
@@ -742,8 +827,8 @@
         }
 
         // PONTOS DIRETO NO RANK (SEM PROVA DE PARTIDA - EXCLUSIVO ADM)
-        function openModalPontosDireto() {
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+        window.openModalPontosDireto = function() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             if (!currentUserObj || currentUserObj.role !== 'ADM') {
                 showToast('Apenas Administradores podem adicionar pontos diretos.', 'error');
                 return;
@@ -761,16 +846,16 @@
 
             document.getElementById('input-pontos-direto').value = '';
             document.getElementById('modal-pontos-direto').classList.remove('hidden');
-        }
+        };
 
-        function closeModalPontosDireto() {
+        window.closeModalPontosDireto = function() {
             document.getElementById('modal-pontos-direto').classList.add('hidden');
-        }
+        };
 
-        function salvarPontosDireto(e) {
+        window.salvarPontosDireto = async function(e) {
             e.preventDefault();
 
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             if (!currentUserObj || currentUserObj.role !== 'ADM') {
                 showToast('Permissão negada.', 'error');
                 return;
@@ -784,7 +869,6 @@
                 return;
             }
 
-            // REGRA: Apenas valores que possam ser divididos meio a meio para VITORIAS + KILLS (Ex: 2 pts -> 1 vitória + 15 kills)
             if (pts <= 0 || pts % 2 !== 0) {
                 showToast('A pontuação direta precisa ser um valor PAR (ex: 2, 4, 6, 8...).', 'warning');
                 return;
@@ -792,33 +876,31 @@
 
             const metade = pts / 2;
             const vitoriasAdicionadas = metade;
-            const killsAdicionadas = metade * 15; // Cada 1 ponto equivale a 15 kills
+            const killsAdicionadas = metade * 15;
 
-            const stats = appState.playersStats[playerName];
+            const stats = window.appState.playersStats[playerName];
             if (stats) {
-                // Adiciona a pontuação no rank mensal
                 stats.mensalPts += pts;
-
-                // Atualiza perfil acumulado proporcionalmente
                 stats.totalWins += vitoriasAdicionadas;
                 stats.totalKills += killsAdicionadas;
 
-                saveDatabase();
+                await saveDatabaseCloud();
                 renderRankings();
                 closeModalPontosDireto();
                 showToast(`+${pts} Pontos adicionados para ${playerName}! (+${vitoriasAdicionadas} Vitórias e +${killsAdicionadas} Kills adicionadas no Perfil).`, 'success');
             }
-        }
+        };
 
-        function closeModalPerfil() {
+        window.closeModalPerfil = function() {
+            window.activeModalPlayer = null;
             document.getElementById('modal-perfil').classList.add('hidden');
-        }
+        };
 
         // REGISTRO DE PARTIDA (EXCLUSIVO ADM)
         let loadedBase64Img = "";
 
-        function openModalRegistrarPartida() {
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+        window.openModalRegistrarPartida = function() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             if (!currentUserObj || currentUserObj.role !== 'ADM') {
                 showToast('Apenas Administradores podem registrar partidas.', 'error');
                 return;
@@ -843,13 +925,13 @@
             loadedBase64Img = "";
 
             document.getElementById('modal-registrar-partida').classList.remove('hidden');
-        }
+        };
 
-        function closeModalRegistrarPartida() {
+        window.closeModalRegistrarPartida = function() {
             document.getElementById('modal-registrar-partida').classList.add('hidden');
-        }
+        };
 
-        function renderDynamicPlayerFields() {
+        window.renderDynamicPlayerFields = function() {
             const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
             const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
             const container = document.getElementById('container-stats-jogadores');
@@ -889,9 +971,9 @@
                 `;
                 fieldsDiv.appendChild(pBox);
             });
-        }
+        };
 
-        function previewImagem(event) {
+        window.previewImagem = function(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -902,15 +984,14 @@
                 };
                 reader.readAsDataURL(file);
             }
-        }
+        };
 
-        function salvarPartida(e) {
+        window.salvarPartida = async function(e) {
             e.preventDefault();
 
             const checkboxes = document.querySelectorAll('#checkboxes-jogadores input[type="checkbox"]:checked');
             const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
 
-            // REGRA: Mínimo 2 jogadores da NORD
             if (selectedPlayers.length < 2) {
                 showToast('É necessário no mínimo 2 jogadores da NORD na partida!', 'warning');
                 return;
@@ -923,30 +1004,21 @@
 
             let resumoPartida = [];
 
-            // CALCULAR E ATUALIZAR PONTOS
             selectedPlayers.forEach(playerName => {
                 const kills = parseInt(document.getElementById(`kills-${playerName}`).value) || 0;
                 const honra = parseInt(document.getElementById(`honra-${playerName}`).value) || 0;
-                const vitoriaPts = 1; // REGRA: Vitória sempre pontua +1
-
-                // PONTOS POR KILL: A cada 15 kills = 1 ponto
+                const vitoriaPts = 1;
                 const killPts = Math.floor(kills / 15);
-
-                // TOTAL DE PONTOS DA PARTIDA PARA O JOGADOR
                 const totalGained = vitoriaPts + killPts + honra;
 
-                // Atualizar stats no banco
-                if (!appState.playersStats[playerName]) {
-                    appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
+                if (!window.appState.playersStats[playerName]) {
+                    window.appState.playersStats[playerName] = { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
                 }
 
-                // 1. Mensal
-                appState.playersStats[playerName].mensalPts += totalGained;
-
-                // 2. Acumulados Históricos (Não Resetam)
-                appState.playersStats[playerName].totalWins += 1;
-                appState.playersStats[playerName].totalKills += kills;
-                appState.playersStats[playerName].totalHonors += honra;
+                window.appState.playersStats[playerName].mensalPts += totalGained;
+                window.appState.playersStats[playerName].totalWins += 1;
+                window.appState.playersStats[playerName].totalKills += kills;
+                window.appState.playersStats[playerName].totalHonors += honra;
 
                 resumoPartida.push({
                     name: playerName,
@@ -956,30 +1028,29 @@
                 });
             });
 
-            // SALVAR REGISTRO DE PARTIDA
             const novaPartida = {
                 id: Date.now(),
                 data: new Date().toLocaleDateString('pt-BR') + ' - ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
-                registeredBy: appState.currentUser,
+                registeredBy: window.appState.currentUser,
                 players: resumoPartida,
                 image: loadedBase64Img
             };
 
-            appState.partidas.unshift(novaPartida);
-            saveDatabase();
+            window.appState.partidas.unshift(novaPartida);
+            await saveDatabaseCloud();
 
             renderRankings();
             renderPartidas();
             closeModalRegistrarPartida();
-            showToast('Partida computada com sucesso e pontos atualizados!', 'success');
-        }
+            showToast('Partida computada com sucesso e pontos atualizados para todos em tempo real!', 'success');
+        };
 
         // EXIBIÇÃO HISTÓRICO DE PARTIDAS
         function renderPartidas() {
             const listPartidas = document.getElementById('list-partidas');
             listPartidas.innerHTML = '';
 
-            if (appState.partidas.length === 0) {
+            if (window.appState.partidas.length === 0) {
                 listPartidas.innerHTML = `
                     <div class="col-span-full text-center py-12 bg-nord-card rounded-2xl border border-gray-800">
                         <i class="fa-solid fa-folder-open text-4xl text-gray-600 mb-3 block"></i>
@@ -989,7 +1060,7 @@
                 return;
             }
 
-            appState.partidas.forEach(partida => {
+            window.appState.partidas.forEach(partida => {
                 const card = document.createElement('div');
                 card.className = "bg-nord-card border border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4";
 
@@ -1025,14 +1096,14 @@
             });
         }
 
-        function verComprovante(base64Img) {
+        window.verComprovante = function(base64Img) {
             const win = window.open("");
             win.document.write(`<body style="margin:0;background:#0b0e14;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${base64Img}" style="max-width:95%;max-height:95vh;border-radius:12px;box-shadow:0 0 30px rgba(0,0,0,0.8);"/></body>`);
-        }
+        };
 
-        // RESET DO RANK MENSAL (CONVERTE CADA 10 PTS MENSAL EM 1 PT ANUAL)
-        function confirmarResetMensal() {
-            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === appState.currentUser);
+        // RESET DO RANK MENSAL
+        window.confirmarResetMensal = async function() {
+            const currentUserObj = PLAYERS_ROSTER.find(p => p.name === window.appState.currentUser);
             if (!currentUserObj || currentUserObj.role !== 'ADM') {
                 showToast('Apenas Administradores podem resetar o Rank Mensal.', 'error');
                 return;
@@ -1041,24 +1112,21 @@
             if (confirm("Deseja realmente resetar o Rank Mensal?\n\n- Os pontos mensais serão resetados a ZERO.\n- A cada 10 pontos mensais acumulados, o jogador ganhará +1 Ponto no Rank Anual.\n- O histórico acumulado dos perfis NUNCA reseta.")) {
                 
                 PLAYERS_ROSTER.forEach(p => {
-                    const stats = appState.playersStats[p.name];
+                    const stats = window.appState.playersStats[p.name];
                     if (stats && stats.mensalPts > 0) {
-                        // REGRA: a cada 10 pontos mensais vira 1 ponto no anual
                         const conversoesAnual = Math.floor(stats.mensalPts / 10);
                         stats.anualPts = (stats.anualPts || 0) + conversoesAnual;
-                        
-                        // Zera o mensal
                         stats.mensalPts = 0;
                     }
                 });
 
-                saveDatabase();
+                await saveDatabaseCloud();
                 renderRankings();
-                showToast('Rank Mensal resetado com sucesso! Dezenas convertidas para o Rank Anual.', 'success');
+                showToast('Rank Mensal resetado com sucesso! Dezenas convertidas para o Rank Anual em tempo real para todos.', 'success');
             }
-        }
+        };
 
-        // SISTEMA DE NOTIFICAÇÃO DE TOAST
+        // NOTIFICAÇÕES TOAST
         function showToast(msg, type = 'info') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
