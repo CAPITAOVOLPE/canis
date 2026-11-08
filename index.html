@@ -370,21 +370,21 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Setup usando variáveis globais ou fallback local
+        // Firebase Configuration do seu projeto chatcat-73364
+        const firebaseConfig = {
+            apiKey: "AIzaSyAerJxRg8JF2W2DLLCLrI7d9pIFNprMQl0",
+            authDomain: "chatcat-73364.firebaseapp.com",
+            databaseURL: "https://chatcat-73364-default-rtdb.firebaseio.com",
+            projectId: "chatcat-73364",
+            storageBucket: "chatcat-73364.firebasestorage.app",
+            messagingSenderId: "645503800079",
+            appId: "1:645503800079:web:850860c42bec8a73e0e47a",
+            measurementId: "G-1K6TJ1G44X"
+        };
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'nord-cs2-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "demo-key",
-                authDomain: "demo-project.firebaseapp.com",
-                projectId: "demo-project",
-                storageBucket: "demo-project.appspot.com",
-                messagingSenderId: "123456789",
-                appId: "1:123456789:web:abcdef"
-            };
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
