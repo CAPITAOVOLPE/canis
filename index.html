@@ -751,18 +751,36 @@
             const playerName = document.getElementById('select-jogador-direto').value;
             const pts = parseInt(document.getElementById('input-pontos-direto').value, 10);
 
-            if (!playerName || isNaN(pts) || pts <= 0) {
-                window.showToast('Preencha os campos corretamente.', 'warning');
+            if (!playerName || isNaN(pts) || pts <= 0 || pts % 2 !== 0) {
+                window.showToast('Insira uma quantidade válida de pontos (número par).', 'warning');
                 return;
             }
 
-            const current = window.appState.playersStats[playerName] || { mensalPts: 0, anualPts: 0, totalKills: 0, totalWins: 0, totalHonors: 0, cards: ['G','G','G','G','G'] };
-            current.mensalPts = (current.mensalPts || 0) + pts;
+            const current = window.appState.playersStats[playerName] || { 
+                mensalPts: 0, 
+                anualPts: 0, 
+                totalKills: 0, 
+                totalWins: 0, 
+                totalHonors: 0, 
+                cards: ['G','G','G','G','G'] 
+            };
+
+            // Regra: A cada 2 pontos diretos = 1 Vitória (+1 pt) e 15 Kills (+1 pt)
+            const pares = pts / 2;
+            const vitoriasAdicionadas = pares;
+            const killsAdicionadas = pares * 15;
+
+            current.mensalPts = (Number(current.mensalPts) || 0) + pts;
+            current.totalWins = (Number(current.totalWins) || 0) + vitoriasAdicionadas;
+            current.totalKills = (Number(current.totalKills) || 0) + killsAdicionadas;
+
+            // Atualização do Estado Local
+            window.appState.playersStats[playerName] = current;
 
             try {
                 const playerDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', playerName);
                 await setDoc(playerDocRef, current, { merge: true });
-                window.showToast(`Adicionados ${pts} pontos para ${playerName}!`, 'success');
+                window.showToast(`Adicionados +${pts} pts (+${vitoriasAdicionadas} Vitória(s) e +${killsAdicionadas} Kills) para ${playerName}!`, 'success');
                 closeModalPontosDireto();
             } catch (err) {
                 console.error("Erro ao salvar pontos:", err);
@@ -900,15 +918,30 @@
                     totalHonors: 0,
                     cards: ['G','G','G','G','G'] 
                 };
-                
-                // Atualizar e calcular estatísticas acumulativas
-                stats.totalKills = (Number(stats.totalKills) || 0) + kills;
-                stats.totalHonors = (Number(stats.totalHonors) || 0) + honors;
 
+                const killsAnteriores = Number(stats.totalKills) || 0;
+                const killsNovasTotal = killsAnteriores + kills;
+
+                // Cálculo dos pontos mensais obtidos por Kills acumuladas (1 Ponto a cada 15 Kills)
+                const ptsKillsAnteriores = Math.floor(killsAnteriores / 15);
+                const ptsKillsNovos = Math.floor(killsNovasTotal / 15);
+                const ganhoPtsKills = ptsKillsNovos - ptsKillsAnteriores;
+
+                // Cálculo de Pontos Adicionais
+                const ganhoPtsVitoria = isVitoria ? 1 : 0;
+                const ganhoPtsHonra = honors; // 1 Honra = 1 Ponto
+
+                const pontosGanhosNestaPartida = ganhoPtsKills + ganhoPtsVitoria + ganhoPtsHonra;
+
+                // Atualizar totais de estatísticas
+                stats.totalKills = killsNovasTotal;
+                stats.totalHonors = (Number(stats.totalHonors) || 0) + honors;
                 if (isVitoria) {
                     stats.totalWins = (Number(stats.totalWins) || 0) + 1;
-                    stats.mensalPts = (Number(stats.mensalPts) || 0) + 3;
                 }
+
+                // Atualizar pontos mensais
+                stats.mensalPts = (Number(stats.mensalPts) || 0) + pontosGanhosNestaPartida;
 
                 // Salva estado local para renderização dinâmica rápida
                 window.appState.playersStats[name] = stats;
@@ -929,7 +962,7 @@
 
             try {
                 await addDoc(partidasCollectionRef, novaPartidaData);
-                window.showToast('Partida e estatísticas dos membros registradas no Firebase!', 'success');
+                window.showToast('Partida e pontuações calculadas com sucesso no Firebase!', 'success');
                 closeModalRegistrarPartida();
             } catch (err) {
                 console.error("Erro ao registrar partida:", err);
